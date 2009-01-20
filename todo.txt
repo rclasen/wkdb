@@ -1,0 +1,72 @@
+
+steps when adding a workout:
+- start srmwin, download data, close srmwin
+
+- start wkgui
+  - shows list of known files
+
+  - shows list of known workouts
+
+  - click "get" (optional start with get by cmdline)
+
+    - start to "get" files according to config 
+      - start garmin download, add file to archive (assign id)
+      - find new srm files, 
+        - link srm files to archive (assign ids)
+        - update srm file comment to carry file archive id
+
+    - show gotten files (save+next)
+      - offer correction of recording errors (time, gps jumps, transmission problems)
+      - offer join/split of fileS
+        - auto-identify "long"/"short" gaps and offer split/join
+
+      - list file-chooser:
+        - start, end, file_id, type
+          - start, end, block_id
+        - editable file/block start time
+        - split/join selected files
+        - save updated file(s)
+        - show/edit file details (graph, table, include marker)
+
+    - offer merging new files (with other new or existing files)
+      - auto-find overlapping files
+      - determin time delta (show graphs)
+      - copy/merge file data into workout details (pointing to file-ids)
+      - calc summary data from details, add to workout list (save+finish)
+
+      - list workout-chooser:
+        - start, end
+          - file_id, start, end, what
+        - selectable "what"
+        - add/remove workout
+
+     - maybe: ask for further workout data
+
+  - further workout data is editable through standard workout list
+
+  - edit workout/file
+    - start, end, ....., comment, equipment, weather, ...
+    - editable fields within lists
+    - dialog/window to show/edit all fields
+    - show graph/table, edit markers/laps
+
+file archive:
+ - file id
+ - file type (srm, gpx, ...)
+ - file name
+ - start time
+ - duration
+ - detail_id
+ - detail_"what"
+
+workout detail
+ - detail_id
+ - workout_id
+ - lon, lat, ele, hr, ...
+
+workout marker
+ - TODO
+
+workout
+ - workout-id
+ - date, time, duration,
