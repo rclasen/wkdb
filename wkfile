@@ -1,0 +1,287 @@
+#!/usr/bin/perl
+
+# scan file directories, add/update/remove files entries in db
+# TODO: POD
+
+# TODO: move to module
+
+use warnings;
+use strict;
+
+use WkDB;
+use Workout;
+use File::Find;
+
+my $verbose = 0;
+
+my $wk = WkDB->new;
+my $db = $wk->db;
+
+
+my $cmd = shift || '';
+
+if( $cmd eq 'scan' ){
+	my $pools = ( scalar @ARGV
+		? $db->resultset('Pool')->search( {
+			name => { '-in' => \@ARGV },
+			})
+		: $db->resultset('Pool') );
+	
+	$db->txn_begin;
+	while( defined( my $pool = $pools->next )){
+		&scan_pool( $pool );
+	}
+	$db->txn_commit;
+
+
+} elsif( $cmd eq 'update' ){
+	my $pool_name = shift
+		or die 'missing pool name';
+
+	my $pool = $db->resultset('Pool')->search( name => $pool_name )->first
+		or die 'no such pool';
+
+	my $getnext = ( scalar @ARGV 
+		? sub { shift @ARGV }
+		: sub { my $f = scalar <>; chomp $f if defined $f; $f; } );
+
+	$db->txn_begin;
+	while( defined( my $f = &$getnext ) ){
+		&update_file( $pool, $f );
+	}
+	$db->txn_commit;;
+
+
+} elsif( $cmd eq 'list' ){
+
+	my %where;
+	if( scalar @ARGV ){
+		$where{'pool.name'} = { '-in' => \@ARGV };
+	}
+
+	my $files = $db->resultset('File')->search( \%where, {
+		join		=> [qw/ pool /],
+		prefetch	=> [qw/ pool /],
+		order_by	=> [qw/ start /],
+	});
+
+	print join("\t", qw/ id start duration workout pool path /),"\n";
+	while( defined( my $p = $files->next )){
+		print join("\t", 
+			$p->id,
+			$p->start,
+			$p->duration,
+			$p->workout || '-',
+			$p->pool->name,
+			$p->path,
+		),"\n";
+	}
+
+
+} elsif( $cmd eq 'delta' ){ # TODO
+
+
+
+} elsif( $cmd eq 'ignore' ){ # TODO
+
+
+
+} elsif( $cmd eq 'addpool' ){
+	my( $name, $path, $pattern ) = @ARGV;
+	
+	$name =~ /^\w+$/
+		or die 'invalid pool name';
+	File::Spec->file_name_is_absolute( $path )
+		or die 'path must be absolute';
+	
+	my $pool = $db->resultset('Pool')->new({
+		name	=> $name,
+		path	=> File::Spec->canonpath( $path ),
+		pattern	=> $pattern,
+	});
+
+	$pool->insert
+		or die 'failed to add pool';
+
+
+} elsif( $cmd eq 'delpool' ){
+	my $name = shift;
+	$name =~ /^\w+$/
+		or die 'invalid pool name';
+
+	my $pool = $db->resultset('Pool')->search( name => $name )->first
+		or die 'no such pool';
+	$pool->delete;
+
+
+} elsif( $cmd eq 'listpool' ){
+
+	my $pools = $db->resultset('Pool')->search( undef, {
+		order_by => 'name'
+	});
+
+	my @fields = (qw/ id name path pattern /);
+	print join("\t", @fields ),"\n";
+	foreach my $f ( $pools->all ){
+		print join( "\t", map {
+			$f->$_;
+		} @fields),"\n";
+	}
+
+} elsif( $cmd eq 'help' ){
+	print <<EOF;
+usage: $0 <cmd> [<args>...]
+operate WkDB file database
+
+commands:
+ scan [<pool>...]
+	scan file pools for new/updated/delete files
+
+ update <pool> [<fname>...]
+	update DB with specified files from cmdline or stdin
+
+ list [<pool>...]
+	list all files entries within DB.
+
+ addpool <pool> <path>
+	add pool to DB
+
+ delpool <pool>
+ 	delete pool and all currently known file entries from DB
+
+ listpool
+	list known pools
+
+ help
+
+EOF
+	exit 0;
+
+
+} else {
+	print STDERR "invalid command, please use $0 help for usage info\n";
+	exit 1;
+}
+
+sub scan_pool {
+	my( $pool ) = @_;
+
+	my @files;
+	my $pattern = $pool->pattern;
+
+	find( {
+		no_chdir => 1,
+		wanted => sub {
+
+			# hidden files
+			if( $File::Find::name =~ m:/(\.[^/]*|CVS)$: ){
+				$File::Find::prune++;
+				return;
+			}
+
+			# backups
+			if( $File::Find::name =~ m:(\.bak|\.sik|\.old|~)$: ){
+				$File::Find::prune++;
+				return;
+			}
+
+			# user's filename pattern
+			if( $pattern && $File::Find::name !~ m:$pattern: ){
+				return;
+			}
+				
+
+			# only regular files
+			lstat($File::Find::name);
+			-f _ or return;
+
+			push @files, $File::Find::name;
+		},
+	}, $pool->path );
+
+	foreach my $fname ( @files ){
+		&update_file( $pool, $fname );
+	}
+
+	&purge_pool( $pool );
+}
+
+sub purge_pool {
+	my( $pool ) = @_;
+
+	my $files = $pool->files;
+	while( defined( my $f = $files->next )){
+		-r $f->path_abs 
+			or $f->delete;
+	}
+}
+
+sub relfile {
+	my( $base, $fn ) = @_;
+
+	unless( File::Spec->file_name_is_absolute( $fn ) ){
+		return File::Spec->canonpath( $fn );
+	}
+
+	return File::Spec->abs2rel( $fn, $base );
+}
+
+# add / update file
+sub update_file {
+	my( $pool, $fn ) = @_;
+
+	# TODO: utf8!!!
+
+	my $rel = relfile( $pool->path, $fn );
+	my $full = File::Spec->catfile( $pool->path, $rel );
+
+
+	# ensure file exists and get modification time
+	my $mtime = (stat $full)[9]
+		or die "stat $full: ";
+	my $mdate = DateTime->from_epoch(
+		epoch		=> $mtime,
+		time_zone	=> 'local',
+	);
+
+
+	my $file = $pool->find_or_new_related( 'files', {
+		path	=> $rel,
+	});
+
+	if( ! defined $file->mtime || $file->mtime < $mdate ){
+		print 'updated ', $pool->name, " $rel\n";
+		# TODO: catch unsupported files
+		my $in = Workout::file_read( $full );
+
+		my $note = $in->note;
+		if( defined $note && $note =~ /\bID:(\d+)\b/ 
+			&& defined( my $old = $pool->find_related(
+				'files', $1 )->first )){
+			
+			$file = $old;
+		};
+
+		my $info = Workout::filter( 'Info', $in );
+		my $null = Workout::Store::Null->new;
+		$null->from( $info );
+
+		$file->start( DateTime->from_epoch(
+			epoch		=> $info->time_start,
+			time_zone	=> 'local',
+		));
+
+		$file->duration( $info->dur );
+		$file->mtime( $mdate );
+		$file->update_or_insert;
+
+
+		# TODO: update $in->note with $file->id
+
+	} else {
+		$verbose && print "unchanged: $rel\n";
+	};
+}
+
+
+

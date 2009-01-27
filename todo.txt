@@ -1,4 +1,6 @@
 
+- use AppConfig for config file
+
 steps when adding a workout:
 - start srmwin, download data, close srmwin
 
@@ -17,6 +19,8 @@ steps when adding a workout:
 
     - show gotten files (save+next)
       - offer correction of recording errors (time, gps jumps, transmission problems)
+        - problem: block time correction requires known good reference.
+	  Two files must be compared, at best graphically.
       - offer join/split of fileS
         - auto-identify "long"/"short" gaps and offer split/join
 

@@ -7,10 +7,19 @@ WriteMakefile(
     VERSION      => '0.01',
     PREREQ_PM         => {
 	    'Workout'	=> undef,
+	    'File::Spec'	=> undef,
+	    'File::HomeDir'	=> undef,
+	    'File::ShareDir'	=> undef,
+	    'Class::Accessor::Fast'	=> undef,
 	    'DBD::SQLite'	=> undef,
 	    'DBIx::Class'	=> undef,
+	    'DateTime'		=> undef,
     }, # e.g., Module::Name => 1.1
     'EXE_FILES'       => [qw(
+    	wkfile
+	wkfind
+	wkexercise
+	wksend
     )],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/WkDB.pm', # retrieve abstract from module

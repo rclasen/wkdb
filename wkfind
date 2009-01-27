@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+
+# identify new files in DB, merge them, add workouts
+
+use warnings;
+use strict;
+
+use WkDB;
+
+# TODO: POD
+
+my $opt_all = 0;
+my $opt_after = '2008-01-01';
+
+my $wanthelp;
+my $needhelp;
+
+GetOptions(
+	'help|h!'	=> \$wanthelp,
+	'all|a!'	=> \$opt_all,
+	'date|d!'	=> \$opt_after,
+) or $needhelp++;
+
+if( $wanthelp ){
+	print <<EOF;
+usage $0 [opt]
+find files for linking to an exercise
+
+--help          this message
+--all|-a        check all files (even those already linked to an exercise)
+--date|-d=<d>   check only files newer than date (yyyy-mm-dd)
+EOF
+	exit 0;
+}
+
+if( $needhelp ){
+	print STDERR "use --help for usage info\n";
+	exit 1;
+}
+
+
+my $wk = WkDB->new;
+my $db = $wk->db;
+
+my $overlaps = $db->resultset('File')->search_overlapping_files({
+	( $opt_all	
+		? () 
+		: ( 
+			ignore	=> 0,
+			workout	=> undef,
+		) 
+	),
+	( $opt_after
+		? ( start	=> { '>=' => $opt_after } )
+		: ()
+	),
+});
+
+foreach my $row ( @$overlaps ){
+	next unless @$row;
+
+	my $first = $row->[0];
+
+	print '# ', join(' ', 
+		$first->start->ymd, $first->start->hms,  $first->end->hms, map {
+			$_->id
+		} @$row ), "\n";
+
+	print join(' ', map {
+		$_->path_abs;
+	} @$row), "\n";
+}

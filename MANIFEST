@@ -6,7 +6,17 @@ debian/compat
 debian/control
 debian/copyright
 debian/rules
+lib/WkDB.pm
+lib/WkDB/Base.pm
+lib/WkDB/Schema.pm
+lib/WkDB/Schema/File.pm
+lib/WkDB/Schema/Pool.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
 README
+todo.txt
+wkfile
+wkfind
+wkexercise
+wksend

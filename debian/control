@@ -8,7 +8,9 @@ Standards-Version: 3.7.2
 
 Package: wkdb
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, 
+Depends: workout, libfile-homedir-perl, libfile-sharedir-perl,
+ libclass-accessor-perl, libdbd-sqlite3-perl, libdbix-class-perl,
+ libdatetime-perl, ${perl:Depends}, ${misc:Depends}, 
 Description: Workout Database
  routines and helper to manage database of sport exercise recordings
  (workouts).
