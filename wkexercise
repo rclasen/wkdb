@@ -1,0 +1,168 @@
+#!/usr/bin/perl -w
+#
+# Copyright (c) 2008 Rainer Clasen
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms described in the file LICENSE included in this
+# distribution.
+#
+
+# merge and submit data to endure database
+
+# TODO: pod
+
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Temp qw/tempfile/;
+use Workout;
+use Workout::Athlete;
+use WkDB;
+
+my @fields;
+
+my $wanthelp;
+my $needhelp;
+
+if( ! GetOptions(
+	"fields|f=s"	=> \@fields,
+	"help|h!"	=> \$wanthelp,
+)){
+	$needhelp++;
+}
+
+if( @fields ){
+	@fields = split(/,/,join(',',@fields));
+} else {
+	#@fields ||= (qw( time dur dist spd cad hr work pwr));
+	@fields = qw( ele );
+}
+
+if( $wanthelp ){
+	print <<EOF;
+$0 [opt] <fileid1> [<fileid2>]
+submit workout data to endure database
+
+Options:
+--help                this cruft
+EOF
+	exit 0;
+}
+
+my $fid1 = shift;
+if( $fid1 !~ /^\d+$/  ){
+	print STDERR "missing/bad input file id\n";
+	$needhelp++;
+}
+
+my $fid2 = shift;
+if( defined $fid2 && $fid2 !~ /^\d+$/ ){
+	print STDERR "bad secondary file id\n";
+	$needhelp++;
+}
+
+if( @ARGV ){
+	print STDERR "too many arguments\n";
+	$needhelp++;
+}
+
+if( $needhelp ){
+	print STDERR "please use $0 --help for usage info\n";
+	exit 1;
+}
+
+my $ath = Workout::Athlete->new;
+my $wk = WkDB->new;
+my $db = $wk->db;
+
+my $wk1 = &get_wk( $fid1 );
+
+my $iter;
+if( ! defined $fid2 ){
+	$iter = $wk1->iterate;
+
+} else {
+	my $wk2 = get_wk( $fid2 );
+	$iter = Workout::filter( 'Merge', $wk2, {
+		master	=> $wk1,
+		fields	=> \@fields,
+	});
+}
+
+my $si = Workout::filter( 'Info', $iter );
+Workout::Store::Null->from( $si );
+
+my $sdate = DateTime->from_epoch( 
+	epoch		=> $si->time_start,
+	time_zone	=> 'local',
+);
+
+print 
+"Anfang:               ", $sdate->strftime( '%F %H:%M:%S' ), "\n",
+"Zeit Brutto:          ", fmtdur($si->dur), " h:m:s (", int($si->dur/60), "m)\n",
+"Zeit Netto:           ", fmtdur($si->dur_mov), " h:m:s (", int($si->dur_mov/60), "m)\n",
+"Temperatur:           ", ($si->temp_avg||'?'),  " °C\n",
+"total work:           ", sprintf( "%.2f", ($si->work||0) / 1000 ), " kJ\n",
+"Distanz:              ", sprintf( '%1.1f', ($si->dist||0) / 1000), " km\n",
+"Geschwindigkeit, Max: ", sprintf( '%1.1f', ($si->spd_max||0) * 3.6), " km/h \n",
+"Starthöhe:            ", (int($si->ele_start||0)||'?'), " m\n",
+"Höhe, Min:            ", (int($si->ele_min||0)||'?'), " m\n",
+"Höhe, Max             ", (int($si->ele_max||0)||'?'), " m\n",
+"Gesamte Steigung:     ", (int($si->incline||0)||'?'), " m\n",
+"Trittfrequenz, Avg:   ", (int($si->cad_avg||0)||'?'), " 1/min\n",
+"Trittfrequenz, Max:   ", (int($si->cad_max||0)||'?'), " 1/min\n",
+"Puls, Avg:            ", (int($si->hr_avg||0)||'?'), " 1/s\n",
+"Puls, Max:            ", (int($si->hr_max||0)||'?'), " 1/s\n",
+"--\n",
+"Zeit creep:           ", fmtdur($si->dur_creep), " h:m:s (", 
+	int(($si->dur_creep)/60), "m)\n",
+"Zeit cad:             ", fmtdur($si->dur_cad), " h:m:s (",
+	int(($si->dur_cad||0)/60), "m) ", 
+	int(100*($si->dur_cad||0) / $si->dur_mov),"% \n",
+"avg speed:            ", sprintf( "%.2f", ($si->spd_avg||0) * 3.6 ), " km/h\n",
+"avg Power:            ", sprintf( "%.2f", ($si->pwr_avg||0) ), " W\n",
+"\n";
+
+
+# TODO: actually submit data to DB / Web-API
+$|=1;
+print 'please enter exercise ID: ';
+my $eid = <>;
+if( $eid =~ /^(\d+)\s*$/ ){
+	&set_workout( $fid1, $1 );
+	&set_workout( $fid2, $1 ) if defined $fid2;
+}
+
+sub fmtdur {
+	my $s = shift;
+	my $m = int($s / 60); $s %= 60;
+	my $h = int($m / 60); $m %= 60;
+	sprintf('%d:%02d:%02d', $h, $m, $s);
+}
+
+sub max {
+	my( $a, $b ) = @_;
+	$a > $b ? $a : $b;
+}
+
+sub get_wk {
+	my( $id ) = @_;
+
+	my $row = $db->resultset('File')->find( $id )
+		or die "no such file: $id";
+
+	Workout::filter( 'Timeshift', 
+		Workout::file_read( $row->path_abs ),
+		{ delta => $row->delta } )
+		or die "cannot read file $id: $!";
+}	
+
+sub set_workout {
+	my( $fid, $eid ) = @_;
+
+	my $row = $db->resultset('File')->find( $fid )
+		or die "no such file: $fid";
+	$row->workout( $eid );
+	$row->ignore( 0 );
+	$row->update;
+}
