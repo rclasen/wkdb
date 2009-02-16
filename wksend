@@ -50,6 +50,8 @@ if( @fields ){
 	@fields = qw( ele );
 }
 
+# TODO: take workout_id as argument!
+
 my $fid1 = shift;
 if( !defined($fid1) || $fid1 !~ /^\d+$/  ){
 	print STDERR "missing/bad input file id\n";
@@ -118,7 +120,7 @@ if( $fid2 ){
 		
 	$merge = Workout::filter( 'Merge', $wk2, {
 		master	=> $wk1,
-		fields	=> @fields,
+		fields	=> \@fields,
 	});
 }
 

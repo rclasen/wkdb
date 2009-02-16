@@ -79,7 +79,7 @@ my $wk1 = &get_wk( $fid1 );
 
 my $iter;
 if( ! defined $fid2 ){
-	$iter = $wk1->iterate;
+	$iter = $wk1;
 
 } else {
 	my $wk2 = get_wk( $fid2 );
