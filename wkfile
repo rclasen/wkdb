@@ -78,9 +78,6 @@ if( $cmd eq 'scan' ){
 	}
 
 
-} elsif( $cmd eq 'delta' ){ # TODO
-
-
 
 } elsif( $cmd eq 'ignore' ){ # TODO
 
@@ -262,21 +259,41 @@ sub update_file {
 			$file = $old;
 		};
 
-		my $info = Workout::filter( 'Info', $in );
-		my $null = Workout::Store::Null->new;
-		$null->from( $info );
-
 		$file->start( DateTime->from_epoch(
-			epoch		=> $info->time_start,
+			epoch		=> $in->time_start,
 			time_zone	=> 'local',
 		));
 
-		$file->duration( $info->dur );
+		$file->duration( $in->dur );
 		$file->mtime( $mdate );
 		$file->update_or_insert;
 
+		if( $in->cap_note ){
+			$verbose && print "updating notes: $rel\n";
 
-		# TODO: update $in->note with $file->id
+			if( $note ){
+				$note .= ' ';
+			} else {
+				$note = '';
+			}
+
+			$in->note( $note .'ID:'. $file->id );
+
+			$in->write( "$full.wkfile" );
+			unlink $full;
+			rename "$full.wkfile", $full;
+
+			$mtime = (stat($full))[9]
+				or die "cannot stat updated file: $full";
+			$mdate = DateTime->from_epoch(
+				epoch		=> $mtime,
+				time_zone	=> 'local',
+			);
+
+			$file->mtime( $mdate );
+			$file->update;
+		}
+
 
 	} else {
 		$verbose && print "unchanged: $rel\n";
