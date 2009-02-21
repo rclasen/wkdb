@@ -14,6 +14,7 @@ WriteMakefile(
 	    'DBD::SQLite'	=> undef,
 	    'DBIx::Class'	=> undef,
 	    'DateTime'		=> undef,
+	    'SQL::Translator'	=> undef,
     }, # e.g., Module::Name => 1.1
     'EXE_FILES'       => [qw(
     	wkfile

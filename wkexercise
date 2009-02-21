@@ -71,6 +71,7 @@ if( $needhelp ){
 	exit 1;
 }
 
+
 my $ath = Workout::Athlete->new;
 my $wk = WkDB->new;
 my $db = $wk->db;
@@ -83,6 +84,7 @@ if( ! defined $fid2 ){
 
 } else {
 	my $wk2 = get_wk( $fid2 );
+	# TODO: swap workouts if necessary (srm first)
 	$iter = Workout::filter( 'Merge', $wk2, {
 		master	=> $wk1,
 		fields	=> \@fields,
@@ -151,9 +153,7 @@ sub get_wk {
 	my $row = $db->resultset('File')->find( $id )
 		or die "no such file: $id";
 
-	Workout::filter( 'Timeshift', 
-		Workout::file_read( $row->path_abs ),
-		{ delta => $row->delta } )
+	Workout::file_read( $row->path_abs )
 		or die "cannot read file $id: $!";
 }	
 

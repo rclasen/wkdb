@@ -99,9 +99,7 @@ my $f1 = $db->resultset('File')->find( $fid1 )
 my $wk1 = 
 	Workout::filter( 'Resample', 
 	Workout::filter( 'Join',
-	Workout::filter( 'Timeshift', 
 	Workout::file_read( $f1->path_abs ), 
-	{ delta => $f1->delta } ),
 	{ recint => $recint } ),
 	{ recint => $recint } );
 
@@ -113,9 +111,7 @@ if( $fid2 ){
 		or die "no such file: $fid2";
 
 	my $wk2 = Workout::filter( 'Join',
-		Workout::filter( 'Timeshift', 
 		Workout::file_read( $f2->path_abs ),
-		{ delta => $f2->delta } ),
 		);
 		
 	$merge = Workout::filter( 'Merge', $wk2, {
