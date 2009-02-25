@@ -153,8 +153,9 @@ sub get_wk {
 	my $row = $db->resultset('File')->find( $id )
 		or die "no such file: $id";
 
-	Workout::file_read( $row->path_abs )
+	my $wk = Workout::file_read( $row->path_abs )
 		or die "cannot read file $id: $!";
+	$wk->iterate;
 }	
 
 sub set_workout {
