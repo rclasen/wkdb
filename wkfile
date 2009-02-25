@@ -11,8 +11,19 @@ use strict;
 use WkDB;
 use Workout;
 use File::Find;
+use Getopt::Long;
 
 my $verbose = 0;
+my $needhelp;
+
+GetOptions(
+	'debug!'	=> \$verbose,
+) or $needhelp++;
+
+if( $needhelp ){
+	print STDERR "please use '$0 help' for usage info\n";
+	exit 1;
+}
 
 my $wk = WkDB->new;
 my $db = $wk->db;
@@ -140,7 +151,7 @@ commands:
  list [<pool>...]
 	list all files entries within DB.
 
- addpool <pool> <path>
+ addpool <pool> <path> <pattern>
 	add pool to DB
 
  delpool <pool>
@@ -252,11 +263,29 @@ sub update_file {
 		my $in = Workout::file_read( $full );
 
 		my $note = $in->note;
-		if( defined $note && $note =~ /\bID:(\d+)\b/ 
-			&& defined( my $old = $pool->find_related(
-				'files', $1 )->first )){
+		my $note_id;
+		if( defined $note && $note =~ /\bID:(\d+)\b/ ){
+			$note_id = $1;
+			$verbose && print "file links to ID: $note_id\n";
+
+			my $old = $db->resultset('File')->search( {
+				id	=> $1,
+			} )->first;
+
+			if( defined($old) ){
 			
-			$file = $old;
+				if( $old->pool->id == $pool->id && (
+					! -r $old->path_abs 
+					|| $old->path eq $rel ) ){
+
+					$file = $old;
+					$file->path( $rel );
+
+				} else {
+					# invalidate note:
+					$note_id = undef;
+				}
+			}
 		};
 
 		$file->start( DateTime->from_epoch(
@@ -268,10 +297,13 @@ sub update_file {
 		$file->mtime( $mdate );
 		$file->update_or_insert;
 
-		if( $in->cap_note ){
+		if( $in->cap_note 
+			&& ( ! defined($note_id) || $note_id != $file->id ) ){
+
 			$verbose && print "updating notes: $rel\n";
 
 			if( $note ){
+				$note =~ s/\s*\bID:\d+\b//;
 				$note .= ' ';
 			} else {
 				$note = '';
