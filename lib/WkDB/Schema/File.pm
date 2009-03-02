@@ -48,7 +48,7 @@ __PACKAGE__->add_columns(
 		is_nullable		=> 0,
 		default_value		=> 0,
 	},
-	workout	=> { # endure exercise.id
+	exercise => { # endure exercise.id
 		data_type		=> 'integer',
 		is_nullable		=> 1,
 	},

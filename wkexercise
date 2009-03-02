@@ -163,7 +163,7 @@ sub set_workout {
 
 	my $row = $db->resultset('File')->find( $fid )
 		or die "no such file: $fid";
-	$row->workout( $eid );
+	$row->exercise( $eid );
 	$row->ignore( 0 );
 	$row->update;
 }
