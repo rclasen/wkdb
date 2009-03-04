@@ -48,7 +48,7 @@ my $overlaps = $db->resultset('File')->search_overlapping_files({
 		? () 
 		: ( 
 			ignore	=> 0,
-			workout	=> undef,
+			exercise	=> undef,
 		) 
 	),
 	( $opt_after

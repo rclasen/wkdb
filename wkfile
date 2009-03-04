@@ -76,7 +76,7 @@ if( $cmd eq 'scan' ){
 		order_by	=> [qw/ start /],
 	});
 
-	print join("\t", qw/ id start duration workout pool path /),"\n";
+	print join("\t", qw/ id start duration exercise pool path /),"\n";
 	while( defined( my $p = $files->next )){
 		print join("\t", 
 			$p->id,
