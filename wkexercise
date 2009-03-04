@@ -92,7 +92,8 @@ if( ! defined $fid2 ){
 }
 
 my $si = Workout::filter( 'Info', $iter );
-Workout::Store::Null->from( $si );
+my $fi = Workout::filter( 'FTP', $si );
+Workout::Store::Null->from( $fi );
 
 my $sdate = DateTime->from_epoch( 
 	epoch		=> $si->time_start,
@@ -105,6 +106,7 @@ print
 "Zeit Netto:           ", fmtdur($si->dur_mov), " h:m:s (", int($si->dur_mov/60), "m)\n",
 "Temperatur:           ", ($si->temp_avg||'?'),  " °C\n",
 "total work:           ", sprintf( "%.2f", ($si->work||0) / 1000 ), " kJ\n",
+"Norm Power:           ", sprintf( "%.2f", ($fi->npwr||0) ), " W\n",
 "Distanz:              ", sprintf( '%1.1f', ($si->dist||0) / 1000), " km\n",
 "Geschwindigkeit, Max: ", sprintf( '%1.1f', ($si->spd_max||0) * 3.6), " km/h \n",
 "Starthöhe:            ", (int($si->ele_start||0)||'?'), " m\n",
