@@ -27,6 +27,7 @@ use WkDB;
 my @fields;
 my $recint = 5;
 my $mailto;
+my $debug;
 
 my $wanthelp;
 my $needhelp;
@@ -36,6 +37,7 @@ GetOptions(
 	'mailto|m=s'	=> \$mailto,
 	'recint|r=i'	=> \$recint,
 	'help|h!'	=> \$wanthelp,
+	'debug!'	=> \$debug,
 ) or $needhelp++;
 
 if( ! $mailto ){
@@ -79,6 +81,7 @@ Options:
 --mailto|-m=<addr>  where to send the files to
 --recint|-r=<int>   sampling interval (default=5)
 --help              this cruft
+--debug             enable debuging output
 EOF
 	exit 0;
 }
@@ -99,9 +102,9 @@ my $f1 = $db->resultset('File')->find( $fid1 )
 my $wk1 = 
 	Workout::filter( 'Resample', 
 	Workout::filter( 'Join',
-	Workout::file_read( $f1->path_abs ), 
-	{ recint => $recint } ),
-	{ recint => $recint } );
+	Workout::file_read( $f1->path_abs, { debug => $debug } ), 
+	{ recint => $recint, debug => $debug } ),
+	{ recint => $recint, debug => $debug } );
 
 my $merge = $wk1;
 my $f2;
@@ -111,20 +114,22 @@ if( $fid2 ){
 		or die "no such file: $fid2";
 
 	my $wk2 = Workout::filter( 'Join',
-		Workout::file_read( $f2->path_abs ),
-		);
+		Workout::file_read( $f2->path_abs, { debug => $debug } ),
+		{ debug => $debug });
 		
 	$merge = Workout::filter( 'Merge', $wk2, {
 		master	=> $wk1,
 		fields	=> \@fields,
+		debug	=> $debug,
 	});
 }
 
-my $info = Workout::filter( 'Info', $merge );
+my $info = Workout::filter( 'Info', $merge, { debug => $debug } );
 my $dst = Workout::file_new( { 
 	ftype	=> "hrm",
 	recint	=> $recint, 
 	athlete	=> $ath,
+	debug	=> $debug,
 } );
 $dst->from( $info );
 
