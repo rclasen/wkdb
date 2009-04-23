@@ -154,6 +154,8 @@ anbei eine weitere Aufzeichnung.
 Start:        ", $sdate->strftime( '%F %H:%M:%S' ), "
 Dauer:        ", &fmtdur( $info->dur ), " h:m:s
 Fahrzeit:     ", &fmtdur( $info->dur_mov ), " h:m:s
+Kurbelnd:     ", fmtdur( $info->dur_ncad ), " h:m:s (",
+	sprintf('%.2f', ($info->cad_percent||0) ), "%)
 Strecke:      ", sprintf( '%1.1f', ($info->dist || 0) / 1000), " km
 Puls Avg:     ", (int($info->hr_avg||0)||'?'), " 1/s
 Leistung Avg: ", (int($info->pwr_avg||0)||'?'), " Watt
