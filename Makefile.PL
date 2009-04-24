@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     NAME              => 'WkDB',
-    VERSION      => '0.01',
+    VERSION      => '0.03',
     PREREQ_PM         => {
 	    'Workout'	=> undef,
 	    'File::Spec'	=> undef,
