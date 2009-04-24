@@ -1,3 +1,11 @@
+wkdb (0.03) unstable; urgency=low
+
+  * update workouts' note field to include file id
+  * removed file->delta column as wkdelta is now able to fix the files
+  * show more info in wkexercise
+
+ -- Rainer Clasen <bj@zuto.de>  Thu, 23 Apr 2009 12:26:20 +0200
+
 wkdb (0.02) unstable; urgency=low
 
   * minor fixes
