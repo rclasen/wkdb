@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     NAME              => 'WkDB',
-    VERSION      => '0.04',
+    VERSION_FROM      => 'lib/WkDB.pm',
     PREREQ_PM         => {
 	    'Workout'	=> undef,
 	    'File::Spec'	=> undef,
@@ -17,9 +17,9 @@ WriteMakefile(
 	    'SQL::Translator'	=> undef,
     }, # e.g., Module::Name => 1.1
     'EXE_FILES'       => [qw(
+	wkexercise
     	wkfile
 	wkfind
-	wkexercise
 	wksend
     )],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005

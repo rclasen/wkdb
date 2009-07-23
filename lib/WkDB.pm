@@ -8,7 +8,25 @@ use File::HomeDir;
 use File::ShareDir;
 use WkDB::Schema;
 
+our $VERSION = '0.04';
 
+=head1 NAME
+
+WkDB - Workout Database. Maintains overview of your Workout files.
+
+=head1 SYNOPSIS
+
+ my $wdb = WkDB->new;
+ $files = $wkdb->db->resultset('File');
+
+=head1 DESCRIPTION
+
+WkDB is a DBIx::Class::Schema. It's intended to keep track of all your
+workouts.
+
+=cut
+
+# TODO: split DB into seperate files, use SQL "ATTACH" to open
 
 our %defaults_ro = (
 	datadir	=> File::Spec->catfile(
@@ -83,3 +101,14 @@ sub db {
 }
 
 1;
+
+=head1 SEE ALSO
+
+WkDB::Schema::*, Workout, WkGUI, wkfile, wkfind
+
+=head1 AUTHOR
+
+Rainer Clasen
+
+=cut
+

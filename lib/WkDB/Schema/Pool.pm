@@ -5,9 +5,15 @@ use base 'WkDB::Base';
 
 # - list of directories to scan for files
 
+# TODO: GUI types for scaffold:
+#  - type name the table provides
+#  - per column used type
+
+# :gui:table=pool,render=Pool
 __PACKAGE__->my_init;
 __PACKAGE__->table('pool');
 __PACKAGE__->add_columns(
+	# :gui:column=id,convert=Plain,render=Plain
 	id	=> {
 		data_type		=> 'integer',
 		is_nullable		=> 0,
@@ -15,16 +21,19 @@ __PACKAGE__->add_columns(
 		default_value		=> '',
 
 	},
+	# :gui:column=name,convert=Plain,render=Plain
 	name	=> {
 		data_type		=> 'varchar',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
+	# :gui:column=path,convert=Plain,render=Plain
 	path	=> {
 		data_type		=> 'varchar',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
+	# :gui:column=pattern,convert=Plain,render=Plain
 	pattern	=> {
 		data_type		=> 'varchar',
 		is_nullable		=> 1,
