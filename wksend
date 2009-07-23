@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 use Getopt::Long;
-use File::Temp qw/tempfile/;
+use File::Temp qw/tempfile tempdir/;
 use Workout;
 use Workout::Athlete;
 use WkDB;
@@ -98,6 +98,7 @@ my $db = $wk->db;
 # read first file
 my $f1 = $db->resultset('File')->find( $fid1 )
 	or die "no such file: $fid1";
+my @attach = $f1->path_abs;
 
 my $wk1 = 
 	Workout::filter( 'Resample', 
@@ -105,6 +106,8 @@ my $wk1 =
 	Workout::file_read( $f1->path_abs, { debug => $debug } ), 
 	{ recint => $recint, debug => $debug } ),
 	{ recint => $recint, debug => $debug } );
+
+
 
 my $merge = $wk1;
 my $f2;
@@ -122,6 +125,8 @@ if( $fid2 ){
 		fields	=> \@fields,
 		debug	=> $debug,
 	});
+
+	push @attach, $f2->path_abs;
 }
 
 my $info = Workout::filter( 'Info', $merge, { debug => $debug } );
@@ -139,10 +144,23 @@ my $sdate = DateTime->from_epoch(
 	time_zone	=> 'local',
 );
 
-my( $hfh, $hfname ) = tempfile( 
-	$sdate->strftime('/tmp/%F_%H%M_XXXXX'), SUFFIX => '.hrm' );
+my $dir = tempdir;
+my $hfname = $dir . $sdate->strftime( '/%F_%H%M.hrm');
+push @attach ,$hfname;
+
+open( my $hfh, '>', $hfname )
+	or die "open hrm: $!";
 $dst->write( $hfh );
 close( $hfh );
+
+
+# zip attachments:  hfname, $f1, $f2
+my $zfname = $dir . $sdate->strftime( '/%F_%H%M.zip' );
+system( qw/ zip -D -j -q -X -9 /, $zfname, @attach ) == 0
+	or die;
+
+
+
 
 # generate message template
 my( $bfh, $bfname ) = tempfile;
@@ -173,11 +191,9 @@ my @arg = (
 	'-e', 'send-hook . "set signature=~/template/mail.signature"',
 	'-s', $sdate->strftime('Training %F %H:%M'),
 	'-i', $bfname,
-	'-a', $hfname,
-	'-a', $f1->path_abs,
+	'-a', $zfname,
 	$mailto,
 );
-push @arg, '-a', $f2->path_abs if $f2;
 
 system( @arg );
 #mutt -s "Training $timstr" -i $body -a $srm -a $hrm -a $gpx $mailto

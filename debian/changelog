@@ -1,3 +1,9 @@
+wkdb (0.04) unstable; urgency=low
+
+  * wksend: send attachments as .zip
+
+ -- Rainer Clasen <bj@zuto.de>  Wed, 22 Jul 2009 21:49:28 +0200
+
 wkdb (0.03) unstable; urgency=low
 
   * update workouts' note field to include file id
