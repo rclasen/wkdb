@@ -196,7 +196,7 @@ my @arg = (
 if( $debug ){
 	print STDERR "will run: >", join(' ', @arg), "<\n",
 		"hit enter to continue";
-	<STDIN>
+	<STDIN>;
 }
 
 system( @arg );

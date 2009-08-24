@@ -130,7 +130,7 @@ print
 $|=1;
 print 'please enter exercise ID: ';
 my $eid = <STDIN>;
-if( $eid =~ /^(\d+)\s*$/ ){
+if( $eid =~ s/^(\d+)\s*$/$1/ ){
 	foreach my $row ( values %files ){
 		$row->exercise( $eid );
 		$row->ignore( 0 );
