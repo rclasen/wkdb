@@ -7,8 +7,6 @@
 # distribution.
 #
 
-# merge and submit data to endure database
-
 # TODO: pod
 
 use strict;
@@ -18,28 +16,18 @@ use Workout;
 use Workout::Athlete;
 use WkDB;
 
-my @fields;
-
 my $wanthelp;
 my $needhelp;
 
 if( ! GetOptions(
-	"fields|f=s"	=> \@fields,
 	"help|h!"	=> \$wanthelp,
 )){
 	$needhelp++;
 }
 
-if( @fields ){
-	@fields = split(/,/,join(',',@fields));
-} else {
-	#@fields ||= (qw( time dur dist spd cad hr work pwr));
-	@fields = qw( ele );
-}
-
 if( $wanthelp ){
 	print <<EOF;
-$0 [opt] <fileid1> [<fileid2>]
+$0 [opt] <fileid1> [<fileid2> ...]
 submit workout data to endure database
 
 Options:
@@ -48,21 +36,16 @@ EOF
 	exit 0;
 }
 
-my $fid1 = shift;
-if( $fid1 !~ /^\d+$/  ){
-	print STDERR "missing/bad input file id\n";
+if( ! @ARGV ){
+	print STDERR "missing input file ids\n";
 	$needhelp++;
 }
 
-my $fid2 = shift;
-if( defined $fid2 && $fid2 !~ /^\d+$/ ){
-	print STDERR "bad secondary file id\n";
-	$needhelp++;
-}
-
-if( @ARGV ){
-	print STDERR "too many arguments\n";
-	$needhelp++;
+foreach my $id ( @ARGV ){
+	if( $id !~ /^\d+$/  ){
+		print STDERR "bad file id: $id\n";
+		$needhelp++;
+	}
 }
 
 if( $needhelp ){
@@ -71,24 +54,37 @@ if( $needhelp ){
 }
 
 
-my $ath = Workout::Athlete->new;
-my $wk = WkDB->new;
-my $db = $wk->db;
+my $wkdb = WkDB->new;
+my $db = $wkdb->db;
 
-my $wk1 = &get_wk( $fid1 );
+my %files;
+
+foreach my $id ( @ARGV ) {
+	my $row = $db->resultset('File')->find( $id )
+		or die "no such file: $id";
+
+	my $n = $row->pool->name;
+
+	exists $files{$n}
+		and die "multiple files of same type are not suppoted id=$id";
+
+	$files{$n} = $row;
+}
+
+# TODO: automagically pick/merge the data from several files
+
+# TODO: don't hardcode pool-specifc behavior
 
 my $iter;
-if( ! defined $fid2 ){
-	$iter = $wk1;
-
-} else {
-	my $wk2 = get_wk( $fid2 );
-	# TODO: swap workouts if necessary (srm first)
-	$iter = Workout::filter( 'Merge', $wk2, {
-		master	=> $wk1,
-		fields	=> \@fields,
-	});
+foreach my $n ( qw/ srm hrm gpx /, keys %files ){
+	if( exists $files{$n} ){
+		$iter = $files{$n}->workout->iterate;
+		last;
+	}
 }
+
+$iter 
+	or die "failed to identify source workout";
 
 my $si = Workout::filter( 'Info', $iter );
 my $fi = Workout::filter( 'FTP', $si );
@@ -133,10 +129,13 @@ print
 # TODO: actually submit data to DB / Web-API
 $|=1;
 print 'please enter exercise ID: ';
-my $eid = <>;
+my $eid = <STDIN>;
 if( $eid =~ /^(\d+)\s*$/ ){
-	&set_workout( $fid1, $1 );
-	&set_workout( $fid2, $1 ) if defined $fid2;
+	foreach my $row ( values %files ){
+		$row->exercise( $eid );
+		$row->ignore( 0 );
+		$row->update;
+	}
 }
 
 sub fmtdur {
@@ -151,23 +150,3 @@ sub max {
 	$a > $b ? $a : $b;
 }
 
-sub get_wk {
-	my( $id ) = @_;
-
-	my $row = $db->resultset('File')->find( $id )
-		or die "no such file: $id";
-
-	my $wk = Workout::file_read( $row->path_abs )
-		or die "cannot read file $id: $!";
-	$wk->iterate;
-}	
-
-sub set_workout {
-	my( $fid, $eid ) = @_;
-
-	my $row = $db->resultset('File')->find( $fid )
-		or die "no such file: $fid";
-	$row->exercise( $eid );
-	$row->ignore( 0 );
-	$row->update;
-}

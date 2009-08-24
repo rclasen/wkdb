@@ -1,8 +1,12 @@
 wkdb (0.04) unstable; urgency=low
 
   * wksend: send attachments as .zip
+  * wksend, wkexercise: get athlete info from source files when possible
+  * wkexercise: no longer merge data, that's done in a step before
+  * wksend: now takes exercise id as argument
+  * wkexercise, wksend: allow more than 2 files per exercise
 
- -- Rainer Clasen <bj@zuto.de>  Wed, 22 Jul 2009 21:49:28 +0200
+ -- Rainer Clasen <bj@zuto.de>  Mon, 24 Aug 2009 13:58:50 +0200
 
 wkdb (0.03) unstable; urgency=low
 

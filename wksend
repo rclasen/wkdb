@@ -7,8 +7,7 @@
 # distribution.
 #
 
-# convert srm to hrm
-# ... merge gpx ele into hrm when available
+# convert to hrm (that's what the trainer likes most)
 # get summary info
 # generate body
 
@@ -24,7 +23,6 @@ use Workout;
 use Workout::Athlete;
 use WkDB;
 
-my @fields;
 my $recint = 5;
 my $mailto;
 my $debug;
@@ -33,36 +31,15 @@ my $wanthelp;
 my $needhelp;
 
 GetOptions(
-	'fields|f=s'	=> \@fields,
 	'mailto|m=s'	=> \$mailto,
 	'recint|r=i'	=> \$recint,
 	'help|h!'	=> \$wanthelp,
 	'debug!'	=> \$debug,
 ) or $needhelp++;
 
-if( ! $mailto ){
-	print STDERR "missing mail address\n";
-	$needhelp++;
-}
-
-if( @fields ){
-	@fields = split(/,/,join(',',@fields));
-} else {
-	#@fields ||= (qw( time dur dist spd cad hr work pwr));
-	@fields = qw( ele );
-}
-
-# TODO: take workout_id as argument!
-
-my $fid1 = shift;
-if( !defined($fid1) || $fid1 !~ /^\d+$/  ){
-	print STDERR "missing/bad input file id\n";
-	$needhelp++;
-}
-
-my $fid2 = shift;
-if( defined $fid2 && $fid2 !~ /^\d+$/ ){
-	print STDERR "bad secondary file id\n";
+my $wkid = shift;
+if( $wkid !~ /^\d+$/ ){
+	print STDERR "invalid workout id\n";
 	$needhelp++;
 }
 
@@ -71,13 +48,17 @@ if( @ARGV ){
 	$needhelp++;
 }
 
+if( ! $mailto ){
+	print STDERR "missing mail address\n";
+	$needhelp++;
+}
+
 if( $wanthelp ){
 	print <<EOF;
-$0 [opt] <file-id> [<file-id>]
-prepare workout data for mailing it to the trainer
+$0 [opt] <workout-id>
+prepare and mail workout data to the trainer
 
 Options:
---fields|f=<f>      fields to merge from second file
 --mailto|-m=<addr>  where to send the files to
 --recint|-r=<int>   sampling interval (default=5)
 --help              this cruft
@@ -91,68 +72,85 @@ if( $needhelp ){
 	exit 1;
 }
 
-my $ath = Workout::Athlete->new;
-my $wk = WkDB->new;
-my $db = $wk->db;
+my $wkdb = WkDB->new;
+my $db = $wkdb->db;
 
-# read first file
-my $f1 = $db->resultset('File')->find( $fid1 )
-	or die "no such file: $fid1";
-my @attach = $f1->path_abs;
+# get files
+my $fset = $db->resultset('File')->search({
+	exercise	=> $wkid,
+}) or die "no files for workout: $wkid";
 
-my $wk1 = 
-	Workout::filter( 'Resample', 
-	Workout::filter( 'Join',
-	Workout::file_read( $f1->path_abs, { debug => $debug } ), 
-	{ recint => $recint, debug => $debug } ),
-	{ recint => $recint, debug => $debug } );
+my %files;
+my @attach;
+foreach my $f ( $fset->all ){
+	my $n = $f->pool->name;
+	my $p = $f->path_abs;
 
+	$debug && print STDERR "adding file ". $f->id .": $p\n";
+	exists $files{$n}
+		and die "multiple files per pool are not supported";
 
-
-my $merge = $wk1;
-my $f2;
-if( $fid2 ){
-	# read second file
-	$f2 = $db->resultset('File')->find( $fid2 )
-		or die "no such file: $fid2";
-
-	my $wk2 = Workout::filter( 'Join',
-		Workout::file_read( $f2->path_abs, { debug => $debug } ),
-		{ debug => $debug });
-		
-	$merge = Workout::filter( 'Merge', $wk2, {
-		master	=> $wk1,
-		fields	=> \@fields,
-		debug	=> $debug,
-	});
-
-	push @attach, $f2->path_abs;
+	$files{$n} = $f;
+	push @attach, $p;
 }
 
-my $info = Workout::filter( 'Info', $merge, { debug => $debug } );
+# TODO: automagically pick/merge the data from several files
+
+# TODO: don't hardcode pool-specifc behavior
+
+my $wk;
+foreach my $n ( qw/ srm hrm gpx /, keys %files ){
+	if( exists $files{$n} ){
+		$wk = $files{$n}->workout({ debug => $debug });
+		last;
+	}
+}
+
+$wk 
+	or die "failed to identify source workout";
+
+
+# get info
+
+my $info = 
+	Workout::filter( 'Info',
+	Workout::filter( 'Resample', 
+	Workout::filter( 'Join',
+	$wk,
+	{ recint => $recint, debug => $debug } ),
+	{ recint => $recint, debug => $debug } ),
+	{ debug => $debug } );
+
+my $ath ||= Workout::Athlete->new;
 my $dst = Workout::file_new( { 
 	ftype	=> "hrm",
 	recint	=> $recint, 
 	athlete	=> $ath,
 	debug	=> $debug,
 } );
+
 $dst->from( $info );
 
-# write hrm
+
+my $dir = tempdir;
 my $sdate = DateTime->from_epoch( 
 	epoch		=> $info->time_start,
 	time_zone	=> 'local',
 );
 
-my $dir = tempdir;
-my $hfname = $dir . $sdate->strftime( '/%F_%H%M.hrm');
-push @attach ,$hfname;
+# write hrm
+if( ! $files{hrm} ){
+	my $hfname = $dir . $sdate->strftime( '/%F_%H%M.hrm');
+	push @attach ,$hfname;
 
-open( my $hfh, '>', $hfname )
-	or die "open hrm: $!";
-$dst->write( $hfh );
-close( $hfh );
+	open( my $hfh, '>', $hfname )
+		or die "open hrm: $!";
+	$dst->write( $hfh );
+	close( $hfh );
+}
 
+
+# TODO: get further details from EndureDB: notes, bike, ...
 
 # zip attachments:  hfname, $f1, $f2
 my $zfname = $dir . $sdate->strftime( '/%F_%H%M.zip' );
@@ -194,6 +192,12 @@ my @arg = (
 	'-a', $zfname,
 	$mailto,
 );
+
+if( $debug ){
+	print STDERR "will run: >", join(' ', @arg), "<\n",
+		"hit enter to continue";
+	<STDIN>
+}
 
 system( @arg );
 #mutt -s "Training $timstr" -i $body -a $srm -a $hrm -a $gpx $mailto
