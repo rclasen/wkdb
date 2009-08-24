@@ -97,6 +97,12 @@ sub end {
 	$start->clone->add( seconds => $self->duration );
 }
 
+sub workout {
+	my $self = shift;
+
+	Workout::file_read( $self->path_abs, @_ );
+}
+
 sub sqlt_deploy_hook {
 	my( $self, $sqlt ) = @_;
 
