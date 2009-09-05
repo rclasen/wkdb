@@ -1,8 +1,9 @@
 wkdb (0.05) unstable; urgency=low
 
   * wkfile: notify about vanished files
+  * wkexercise: cope with 0-moving time
 
- -- Rainer Clasen <bj@zuto.de>  Fri, 28 Aug 2009 13:53:49 +0200
+ -- Rainer Clasen <bj@zuto.de>  Sat, 05 Sep 2009 20:26:56 +0200
 
 wkdb (0.04) unstable; urgency=low
 

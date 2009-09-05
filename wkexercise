@@ -13,7 +13,6 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Workout;
-use Workout::Athlete;
 use WkDB;
 
 my $wanthelp;
@@ -117,7 +116,7 @@ print
 	int(($si->dur_creep)/60), "m)\n",
 "Zeit cad:             ", fmtdur($si->dur_cad), " h:m:s (",
 	int(($si->dur_cad||0)/60), "m) ", 
-	int(100*($si->dur_cad||0) / $si->dur_mov),"% \n",
+	&fmtpercent( $si->dur_cad, $si->dur_mov || $si->dur ),"% \n",
 "Zeit cad>0:           ", fmtdur( $si->dur_ncad ), " h (",
 	int(($si->dur_ncad||0)/60), "m) (",
 	sprintf('%.2f', ($si->cad_percent||0) ), "%)\n",
@@ -136,6 +135,13 @@ if( $eid =~ s/^(\d+)\s*$/$1/ ){
 		$row->ignore( 0 );
 		$row->update;
 	}
+}
+
+sub fmtpercent {
+	my( $p, $tot ) = @_;
+	return '?' unless $tot;
+
+	int(100*($p||0) / $tot),
 }
 
 sub fmtdur {
