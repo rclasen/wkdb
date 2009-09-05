@@ -1,3 +1,9 @@
+wkdb (0.05) unstable; urgency=low
+
+  * wkfile: notify about vanished files
+
+ -- Rainer Clasen <bj@zuto.de>  Fri, 28 Aug 2009 13:53:49 +0200
+
 wkdb (0.04) unstable; urgency=low
 
   * wksend: send attachments as .zip

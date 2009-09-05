@@ -219,8 +219,9 @@ sub purge_pool {
 
 	my $files = $pool->files;
 	while( defined( my $f = $files->next )){
-		-r $f->path_abs 
-			or $f->delete;
+		-r $f->path_abs and next;
+		print 'vanished ', $f->id, "/", $pool->name, " ", $f->path, "\n";
+		$f->delete;
 	}
 }
 
