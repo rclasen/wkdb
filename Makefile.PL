@@ -6,6 +6,7 @@ WriteMakefile(
     NAME              => 'WkDB',
     VERSION_FROM      => 'lib/WkDB.pm',
     PREREQ_PM         => {
+	    # update debian/control, too!
 	    'Workout'	=> undef,
 	    'File::Spec'	=> undef,
 	    'File::HomeDir'	=> undef,
