@@ -8,7 +8,7 @@ use File::HomeDir;
 use File::ShareDir;
 use WkDB::Schema;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 NAME
 
