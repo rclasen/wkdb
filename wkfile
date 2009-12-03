@@ -279,6 +279,12 @@ sub update_file {
 		# TODO: catch unsupported files
 		$in = Workout::file_read( $full )
 			or die "failed to read $full";
+
+		if( ! $in->chunk_count ){
+			$verbose && print " empty.\n";
+			return;
+		}
+
 		$note = $in->note;
 
 		if( $note && $note =~ /\bID:(\d+)\b/ ){
