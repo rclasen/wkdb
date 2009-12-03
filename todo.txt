@@ -74,3 +74,5 @@ workout marker
 workout
  - workout-id
  - date, time, duration,
+
+plot gpx  with libchamplain  

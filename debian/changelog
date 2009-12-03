@@ -1,3 +1,9 @@
+wkdb (0.06) unstable; urgency=low
+
+  * wkfile: properly detect new/modified/moved/vanished files
+
+ -- Rainer Clasen <bj@zuto.de>  Thu, 03 Dec 2009 20:08:10 +0100
+
 wkdb (0.05) unstable; urgency=low
 
   * wkfile: notify about vanished files
