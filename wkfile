@@ -207,7 +207,7 @@ sub scan_pool {
 		},
 	}, $pool->path );
 
-	foreach my $fname ( @files ){
+	foreach my $fname ( sort { $a cmp $b } @files ){
 		&update_file( $pool, $fname );
 	}
 
@@ -220,7 +220,7 @@ sub purge_pool {
 	my $files = $pool->files;
 	while( defined( my $f = $files->next )){
 		-r $f->path_abs and next;
-		print 'vanished ', $f->id, "/", $pool->name, " ", $f->path, "\n";
+		print 'vanished ', $f->id, " ", $pool->name, " ", $f->path, "\n";
 		$f->delete;
 	}
 }
@@ -235,6 +235,7 @@ sub relfile {
 	return File::Spec->abs2rel( $fn, $base );
 }
 
+
 # add / update file
 sub update_file {
 	my( $pool, $fn ) = @_;
@@ -244,93 +245,141 @@ sub update_file {
 	my $rel = relfile( $pool->path, $fn );
 	my $full = File::Spec->catfile( $pool->path, $rel );
 
+	local $| = 1;
+	$verbose && print 'checking ' , $pool->name, ' ', $rel, ':';
 
-	# ensure file exists and get modification time
-	my $mtime = (stat $full)[9]
-		or die "stat $full: ";
 	my $mdate = DateTime->from_epoch(
-		epoch		=> $mtime,
+		epoch		=> (stat $full)[9],
 		time_zone	=> 'local',
 	);
 
-
-	my $file = $pool->find_or_new_related( 'files', {
+	my $pfile = $pool->find_related( 'files', {
 		path	=> $rel,
 	});
 
-	if( ! defined $file->mtime || $file->mtime < $mdate ){
-		print 'updated ', $pool->name, " $rel\n";
+	my $dbup;
+	#my $dbup = 1; # TODO: optionally update *ALL* files' metadata
+
+	# name in db -> if modified: update db, update note
+	if( $pfile ){
+		if( $pfile->mtime < $mdate ){
+			$verbose && print ' modified=', $pfile->id;
+			$dbup++;
+
+		} else {
+			$verbose && print ' unchanged=', $pfile->id;
+
+		}
+	}
+	
+	my $in;
+	my $note;
+	my $note_id;
+	if( ! $pfile || $dbup){
 		# TODO: catch unsupported files
-		my $in = Workout::file_read( $full );
+		$in = Workout::file_read( $full )
+			or die "failed to read $full";
+		$note = $in->note;
 
-		my $note = $in->note;
-		my $note_id;
-		if( defined $note && $note =~ /\bID:(\d+)\b/ ){
+		if( $note && $note =~ /\bID:(\d+)\b/ ){
 			$note_id = $1;
-			$verbose && print "file links to ID: $note_id\n";
+		}
+	}
 
-			my $old = $db->resultset('File')->search( {
-				id	=> $1,
-			} )->first;
+	# else if id set, in same pool -> update db
+	if( ! $pfile && defined $note_id ){
+		#$verbose && print "file links to ID: $note_id\n";
 
-			if( defined($old) ){
-			
-				if( $old->pool->id == $pool->id && (
-					! -r $old->path_abs 
-					|| $old->path eq $rel ) ){
+		$pfile = $db->resultset('File')->search( {
+			id	=> $note_id,
+		} )->first;
 
-					$file = $old;
-					$file->path( $rel );
+		if( ! $pfile ){
+			#$verbose && print "file ID:$note_id not in DB\n";
 
-				} else {
-					# invalidate note:
-					$note_id = undef;
-				}
-			}
-		};
+		} elsif( $pfile->pool->id != $pool->id ){
+			#$verbose && print "file ID:$note_id in wrong pool\n";
+			$pfile = undef;
 
-		$file->start( DateTime->from_epoch(
+		} elsif( -r $pfile->path_abs ){
+			#$verbose && print "file ID:$note_id still exists\n";
+			$pfile = undef;
+
+		} else {
+			$verbose && print ' moved=', $pfile->id;
+			$dbup++;
+		}
+
+	}
+
+	# else not in db -> add to db, update note
+	if( ! $pfile ){
+		$verbose && print ' new';
+		$pfile = $pool->add_to_files({
+			path	=> $rel,
+		});
+		$dbup++;
+	}
+
+
+	my @up;
+	if( $dbup ){
+		if( $verbose ){
+			print ' DB';
+		} else {
+			push @up, "DB";
+		}
+
+		$pfile->start( DateTime->from_epoch(
 			epoch		=> $in->time_start,
 			time_zone	=> 'local',
 		));
 
-		$file->duration( $in->dur );
-		$file->mtime( $mdate );
-		$file->update_or_insert;
+		$pfile->path( $rel );
+		$pfile->duration( $in->dur );
+		$pfile->mtime( $mdate );
+		$pfile->update_or_insert;
+	}
 
-		if( $in->cap_note 
-			&& ( ! defined($note_id) || $note_id != $file->id ) ){
+	if( $in && $in->cap_note && ( 
+		! defined $note_id or $note_id != $pfile->id  )){
 
-			$verbose && print "updating notes: $rel\n";
-
-			if( $note ){
-				$note =~ s/\s*\bID:\d+\b//;
-				$note .= ' ';
-			} else {
-				$note = '';
-			}
-
-			$in->note( $note .'ID:'. $file->id );
-
-			$in->write( "$full.wkfile" );
-			unlink $full;
-			rename "$full.wkfile", $full;
-
-			$mtime = (stat($full))[9]
-				or die "cannot stat updated file: $full";
-			$mdate = DateTime->from_epoch(
-				epoch		=> $mtime,
-				time_zone	=> 'local',
-			);
-
-			$file->mtime( $mdate );
-			$file->update;
+		if( $verbose ){
+			print ' ID';
+		} else {
+			push @up, "ID";
 		}
 
 
-	} else {
-		$verbose && print "unchanged: $rel\n";
-	};
+		if( $note ){
+			$note =~ s/\s*\bID:\d+\b\s*//;
+			$note =~ s/\s+$/ /;
+		} else {
+			$note = '';
+		}
+
+		$in->note( $note .'ID:'. $pfile->id );
+
+		# TODO: safe tempfile
+		$in->write( "$full.wkfile" );
+		unlink $full;
+		rename "$full.wkfile", $full;
+
+		$mdate = DateTime->from_epoch(
+			epoch		=> (stat($full))[9],
+			time_zone	=> 'local',
+		);
+		$pfile->mtime( $mdate );
+		$pfile->update;
+	}
+
+	if( $verbose ){
+		print ".\n";
+
+	} elsif( @up ){
+		print 'updated ' , $pfile->id, ' ', $pool->name, ' ', $rel,
+			':', join(',', @up),"\n";
+	}
 }
 
 
