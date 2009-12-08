@@ -258,7 +258,7 @@ sub update_file {
 	});
 
 	my $dbup;
-	#my $dbup = 1; # TODO: optionally update *ALL* files' metadata
+	#$dbup = 1; # TODO: optionally update *ALL* files' metadata
 
 	# name in db -> if modified: update db, update note
 	if( $pfile ){
@@ -289,6 +289,7 @@ sub update_file {
 
 		if( $note && $note =~ /\bID:(\d+)\b/ ){
 			$note_id = $1;
+			$verbose && print ' id=', $note_id;
 		}
 	}
 

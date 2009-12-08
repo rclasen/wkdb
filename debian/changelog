@@ -1,8 +1,9 @@
 wkdb (0.06) unstable; urgency=low
 
   * wkfile: properly detect new/modified/moved/vanished files
+  * fix "data-loss": disabled unwanted cascading in self-join.
 
- -- Rainer Clasen <bj@zuto.de>  Thu, 03 Dec 2009 20:08:10 +0100
+ -- Rainer Clasen <bj@zuto.de>  Tue, 08 Dec 2009 15:23:00 +0100
 
 wkdb (0.05) unstable; urgency=low
 
