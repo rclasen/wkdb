@@ -38,6 +38,8 @@ __PACKAGE__->add_columns(
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
+	# TODO: add checksum to track changes
+
 	# :gui:column=start,convert=Plain,render=Plain
 	start	=> { # start date+time
 		data_type		=> 'datetime',
@@ -67,7 +69,10 @@ __PACKAGE__->add_unique_constraint(['path']);
 __PACKAGE__->belongs_to( 'pool' => 'WkDB::Schema::Pool' );
 __PACKAGE__->has_many( 'exercise_files' => 'WkDB::Schema::File', {
 	'foreign.exercise' => 'self.exercise',
-} );
+}, {
+	cascade_delete	=> 0,
+	cascade_copy	=> 0,
+});
 
 sub path_abs {
 	my $self = shift;
