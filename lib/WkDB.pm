@@ -38,7 +38,7 @@ __PACKAGE__->mk_ro_accessors( keys %defaults_ro );
 sub new {
 	my( $proto, $a ) = @_;
 	my $self = $proto->SUPER::new( {
-		%defaults_ro, 
+		%defaults_ro,
 		( $a ? %$a : () ),
 		db	=> undef,
 	} );
@@ -56,7 +56,7 @@ sub dbfname {
 
 sub schemadir {
 	my $self = shift;
-	File::Spec->catfile( File::ShareDir->module_dir(__PACKAGE__), 
+	File::Spec->catfile( File::ShareDir->module_dir(__PACKAGE__),
 		'schema-updates' );
 }
 

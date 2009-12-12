@@ -37,7 +37,7 @@ if( $cmd eq 'scan' ){
 			name => { '-in' => \@ARGV },
 			})
 		: $db->resultset('Pool') );
-	
+
 	$db->txn_begin;
 	while( defined( my $pool = $pools->next )){
 		&scan_pool( $pool );
@@ -52,7 +52,7 @@ if( $cmd eq 'scan' ){
 	my $pool = $db->resultset('Pool')->search( name => $pool_name )->first
 		or die 'no such pool';
 
-	my $getnext = ( scalar @ARGV 
+	my $getnext = ( scalar @ARGV
 		? sub { shift @ARGV }
 		: sub { my $f = scalar <>; chomp $f if defined $f; $f; } );
 
@@ -78,7 +78,7 @@ if( $cmd eq 'scan' ){
 
 	print join("\t", qw/ id start duration exercise pool path /),"\n";
 	while( defined( my $p = $files->next )){
-		print join("\t", 
+		print join("\t",
 			$p->id,
 			$p->start,
 			$p->duration,
@@ -96,12 +96,12 @@ if( $cmd eq 'scan' ){
 
 } elsif( $cmd eq 'addpool' ){
 	my( $name, $path, $pattern ) = @ARGV;
-	
+
 	$name =~ /^\w+$/
 		or die 'invalid pool name';
 	File::Spec->file_name_is_absolute( $path )
 		or die 'path must be absolute';
-	
+
 	my $pool = $db->resultset('Pool')->new({
 		name	=> $name,
 		path	=> File::Spec->canonpath( $path ),
@@ -197,7 +197,7 @@ sub scan_pool {
 			if( $pattern && $File::Find::name !~ m:$pattern: ){
 				return;
 			}
-				
+
 
 			# only regular files
 			lstat($File::Find::name);
@@ -271,7 +271,7 @@ sub update_file {
 
 		}
 	}
-	
+
 	my $in;
 	my $note;
 	my $note_id;
@@ -348,7 +348,7 @@ sub update_file {
 		$pfile->update_or_insert;
 	}
 
-	if( $in && $in->cap_note && ( 
+	if( $in && $in->cap_note && (
 		! defined $note_id or $note_id != $pfile->id  )){
 
 		if( $verbose ){

@@ -11,9 +11,9 @@ steps when adding a workout:
 
   - click "get" (optional start with get by cmdline)
 
-    - start to "get" files according to config 
+    - start to "get" files according to config
       - start garmin download, add file to archive (assign id)
-      - find new srm files, 
+      - find new srm files,
         - link srm files to archive (assign ids)
         - update srm file comment to carry file archive id
 
@@ -75,4 +75,4 @@ workout
  - workout-id
  - date, time, duration,
 
-plot gpx  with libchamplain  
+plot gpx  with libchamplain

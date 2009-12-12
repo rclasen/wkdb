@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 # Copyright (c) 2008 Rainer Clasen
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms described in the file LICENSE included in this
 # distribution.
@@ -106,15 +106,15 @@ foreach my $n ( qw/ srm hrm gpx /, keys %files ){
 	}
 }
 
-$wk 
+$wk
 	or die "failed to identify source workout";
 
 
 # get info
 
-my $info = 
+my $info =
 	Workout::filter( 'Info',
-	Workout::filter( 'Resample', 
+	Workout::filter( 'Resample',
 	Workout::filter( 'Join',
 	$wk,
 	{ recint => $recint, debug => $debug } ),
@@ -122,9 +122,9 @@ my $info =
 	{ debug => $debug } );
 
 my $ath ||= Workout::Athlete->new;
-my $dst = Workout::file_new( { 
+my $dst = Workout::file_new( {
 	ftype	=> "hrm",
-	recint	=> $recint, 
+	recint	=> $recint,
 	athlete	=> $ath,
 	debug	=> $debug,
 } );
@@ -133,7 +133,7 @@ $dst->from( $info );
 
 
 my $dir = tempdir;
-my $sdate = DateTime->from_epoch( 
+my $sdate = DateTime->from_epoch(
 	epoch		=> $info->time_start,
 	time_zone	=> 'local',
 );
@@ -162,7 +162,7 @@ system( qw/ zip -D -j -q -X -9 /, $zfname, @attach ) == 0
 
 # generate message template
 my( $bfh, $bfname ) = tempfile;
-print $bfh 
+print $bfh
 "Hallo erstmal!
 
 anbei eine weitere Aufzeichnung.
@@ -184,7 +184,7 @@ close($bfh);
 
 # open mailer
 my @arg = (
-	'mutt', 
+	'mutt',
 	'-e', 'set sig_dashes',
 	'-e', 'send-hook . "set signature=~/template/mail.signature"',
 	'-s', $sdate->strftime('Training %F %H:%M'),

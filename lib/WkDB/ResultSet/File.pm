@@ -19,7 +19,7 @@ sub search_overlapping_files {
 		my( $f1, $f2 ) = ( $f->start, $f->end );
 
 		# overlapping with last?
-		if( !defined( $r1 ) || !defined($r2) 
+		if( !defined( $r1 ) || !defined($r2)
 			|| ! ( ($r2 < $f1) || ($f2 < $r1) ) ){
 
 			if( !defined($r1) || $f1 < $r1 ){

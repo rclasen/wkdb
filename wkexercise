@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
 # Copyright (c) 2008 Rainer Clasen
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms described in the file LICENSE included in this
 # distribution.
@@ -82,19 +82,19 @@ foreach my $n ( qw/ srm hrm gpx /, keys %files ){
 	}
 }
 
-$iter 
+$iter
 	or die "failed to identify source workout";
 
 my $si = Workout::filter( 'Info', $iter );
 my $fi = Workout::filter( 'FTP', $si );
 Workout::Store::Null->from( $fi );
 
-my $sdate = DateTime->from_epoch( 
+my $sdate = DateTime->from_epoch(
 	epoch		=> $si->time_start,
 	time_zone	=> 'local',
 );
 
-print 
+print
 "Anfang:               ", $sdate->strftime( '%F %H:%M:%S' ), "\n",
 "Zeit Brutto:          ", fmtdur($si->dur), " h:m:s (", int($si->dur/60), "m)\n",
 "Zeit Netto:           ", fmtdur($si->dur_mov), " h:m:s (", int($si->dur_mov/60), "m)\n",
@@ -112,10 +112,10 @@ print
 "Puls, Avg:            ", (int($si->hr_avg||0)||'?'), " 1/s\n",
 "Puls, Max:            ", (int($si->hr_max||0)||'?'), " 1/s\n",
 "--\n",
-"Zeit creep:           ", fmtdur($si->dur_creep), " h:m:s (", 
+"Zeit creep:           ", fmtdur($si->dur_creep), " h:m:s (",
 	int(($si->dur_creep)/60), "m)\n",
 "Zeit cad:             ", fmtdur($si->dur_cad), " h:m:s (",
-	int(($si->dur_cad||0)/60), "m) ", 
+	int(($si->dur_cad||0)/60), "m) ",
 	&fmtpercent( $si->dur_cad, $si->dur_mov || $si->dur ),"% \n",
 "Zeit cad>0:           ", fmtdur( $si->dur_ncad ), " h (",
 	int(($si->dur_ncad||0)/60), "m) (",
