@@ -7,12 +7,10 @@ use WkDB::ResultSet::File;
 # - Metadata cache for workout files for faster access (start, duration)
 # - keep track of files already processed as workout
 
-# :gui:table=file,render=File
 __PACKAGE__->my_init;
 __PACKAGE__->table('file');
 __PACKAGE__->resultset_class('WkDB::ResultSet::File');
 __PACKAGE__->add_columns(
-	# :gui:column=id,convert=Plain,render=Plain
 	id	=> {
 		data_type		=> 'integer',
 		is_nullable		=> 0,
@@ -20,19 +18,16 @@ __PACKAGE__->add_columns(
 		default_value		=> '',
 
 	},
-	# :gui:column=pool,convert=Plain,render=Plain
 	pool	=> { # pool.id
 		data_type		=> 'integer',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	# :gui:column=path,convert=Plain,render=Plain
 	path	=> { # relative path within pool
 		data_type		=> 'varchar',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	# :gui:column=mtime,convert=Plain,render=Plain
 	mtime	=> { # file modification time
 		data_type		=> 'datetime',
 		is_nullable		=> 0,
@@ -40,25 +35,21 @@ __PACKAGE__->add_columns(
 	},
 	# TODO: add checksum to track changes
 
-	# :gui:column=start,convert=Plain,render=Plain
 	start	=> { # start date+time
 		data_type		=> 'datetime',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	# :gui:column=duration,convert=Plain,render=Plain
 	duration	=> { # seconds
 		data_type		=> 'integer',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	# :gui:column=ignore,convert=Plain,render=Plain
 	ignore	=> { # ignore when searching for exercises?
 		data_type		=> 'boolean',
 		is_nullable		=> 0,
 		default_value		=> 0,
 	},
-	# :gui:column=exercise,convert=Plain,render=Plain
 	exercise => { # endure exercise.id
 		data_type		=> 'integer',
 		is_nullable		=> 1,
