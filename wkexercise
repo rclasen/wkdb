@@ -19,7 +19,7 @@ my $wanthelp;
 my $needhelp;
 
 if( ! GetOptions(
-	"help|h!"	=> \$wanthelp,
+	"help!"		=> \$wanthelp,
 )){
 	$needhelp++;
 }

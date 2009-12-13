@@ -17,7 +17,7 @@ my $verbose = 0;
 my $needhelp;
 
 GetOptions(
-	'debug!'	=> \$verbose,
+	'verbose!'	=> \$verbose,
 ) or $needhelp++;
 
 if( $needhelp ){

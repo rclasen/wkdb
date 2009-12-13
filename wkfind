@@ -17,9 +17,9 @@ my $wanthelp;
 my $needhelp;
 
 GetOptions(
-	'help|h!'	=> \$wanthelp,
-	'all|a!'	=> \$opt_all,
-	'date|d!'	=> \$opt_after,
+	'all!'		=> \$opt_all,
+	'date=s'	=> \$opt_after,
+	'help!'		=> \$wanthelp,
 ) or $needhelp++;
 
 if( $wanthelp ){
@@ -27,9 +27,10 @@ if( $wanthelp ){
 usage $0 [opt]
 find files for linking to an exercise
 
+--all           check all files (even those already linked to an exercise)
+--date=<d>      check only files newer than date (yyyy-mm-dd)
+
 --help          this message
---all|-a        check all files (even those already linked to an exercise)
---date|-d=<d>   check only files newer than date (yyyy-mm-dd)
 EOF
 	exit 0;
 }
