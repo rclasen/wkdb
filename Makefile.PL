@@ -14,6 +14,7 @@ WriteMakefile(
 	    'Class::Accessor::Fast'	=> undef,
 	    'DBD::SQLite'	=> undef,
 	    'DBIx::Class'	=> undef,
+	    'DBIx::Class::Timestamp'	=> undef,
 	    'DateTime'		=> undef,
 	    'SQL::Translator'	=> undef,
     }, # e.g., Module::Name => 1.1

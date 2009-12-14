@@ -7,6 +7,7 @@ sub my_init {
 	my( $self ) = shift;
 
 	$self->load_components(qw/
+		TimeStamp
 		InflateColumn::DateTime
 		PK::Auto
 		Core
