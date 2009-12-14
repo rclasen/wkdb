@@ -40,7 +40,7 @@ __PACKAGE__->add_columns(
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	duration	=> { # seconds
+	duration => { # seconds
 		data_type		=> 'integer',
 		is_nullable		=> 0,
 		default_value		=> '',

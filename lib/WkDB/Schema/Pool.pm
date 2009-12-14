@@ -15,17 +15,17 @@ __PACKAGE__->add_columns(
 		default_value		=> '',
 
 	},
-	name	=> {
+	name	=> { # non-white-space name
 		data_type		=> 'varchar',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	path	=> {
+	path	=> { # pool's top directory
 		data_type		=> 'varchar',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	pattern	=> {
+	pattern	=> { # perl regexp
 		data_type		=> 'varchar',
 		is_nullable		=> 1,
 	},
