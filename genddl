@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use lib "lib";
+use WkDB;
+
+my $wk = WkDB->new;
+my $db = $wk->db;
+
+
+mkdir('dbschema');
+#print $db->storage->deployment_statements($db);
+#$db->create_ddl_dir(['SQLite'], '0.1', 'dbschema');
+$db->create_ddl_dir(['SQLite'], '0.2', 'dbschema', '0.1');

@@ -6,6 +6,7 @@ debian/compat
 debian/control
 debian/copyright
 debian/rules
+genddl
 lib/WkDB.pm
 lib/WkDB/Base.pm
 lib/WkDB/ResultSet/File.pm
