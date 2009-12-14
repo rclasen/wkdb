@@ -18,10 +18,8 @@ WriteMakefile(
 	    'SQL::Translator'	=> undef,
     }, # e.g., Module::Name => 1.1
     'EXE_FILES'       => [qw(
-	wkexercise
     	wkfile
 	wkfind
-	wksend
     )],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/WkDB.pm', # retrieve abstract from module
