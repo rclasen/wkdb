@@ -49,6 +49,11 @@ sub new {
 	$self;
 }
 
+sub cfgname {
+	my $self = shift;
+	File::Spec->catfile($self->datadir,'config');
+}
+
 sub dbfname {
 	my $self = shift;
 	File::Spec->catfile($self->datadir,'data.db');
@@ -65,6 +70,38 @@ sub backupdir {
 	File::Spec->catfile( $self->datadir, 'backup' );
 }
 
+sub _cfg_read {
+	my $self = shift;
+
+	my $fn = $self->cfgname;
+	open( my $fh, "<", $fn )
+		or return {};
+
+	my %cfg;
+
+	while( defined( my $line = <$fh> ) ){
+		next if $line =~ /^#/;
+		next if $line =~ /^\s*$/;
+		$line =~ /^(\w+)="(.*)"\s*$/
+			or croak "config $fn, line $.: syntax error";
+
+		$cfg{$1} = $2;
+	}
+
+	close $fh;
+
+	return \%cfg;
+}
+
+sub config {
+	my $self = shift;
+	$self->{config} ||= $self->_cfg_read;
+
+	return $self->{config}{$_[0]}
+		if @_ && exists $self->{config}{$_[0]};
+
+	$self->{config};
+}
 
 sub _db_connect_do {
 	my( $self, $fn ) = @_;
