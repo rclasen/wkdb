@@ -37,4 +37,11 @@ sub BODYWEIGHT {
 	return;
 }
 
+sub ATHLETE {
+	my( $self, $id ) = @_;
+	return unless defined $id;
+	return if $self->wk->db->resultset('Athlete')->find($id);
+	return 'NOTKNOWN';
+}
+
 1;

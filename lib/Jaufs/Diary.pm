@@ -6,6 +6,9 @@ use base 'Jaufs';
 use WkDB::Validate::Diary;
 
 our %fields = (
+	athlete => { # TODO: decode_dbic?
+		decode	=> \&Jaufs::decode_uint,
+	},
 	date => {
 		encode	=> \&Jaufs::encode_date,
 		decode	=> \&Jaufs::decode_date,
@@ -37,6 +40,7 @@ our %fields = (
 );
 
 our @order = qw(
+	athlete
 	date
 	sleep
 	hr

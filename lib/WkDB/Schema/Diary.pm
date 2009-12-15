@@ -12,6 +12,11 @@ __PACKAGE__->add_columns(
 		is_auto_increment	=> 1,
 		is_nullable		=> 0,
 	},
+	athlete	=> { # athlete.id
+		data_type		=> 'integer',
+		is_nullable		=> 0,
+		default_value		=> '',
+	},
 	"day"	=> { # date
 		data_type		=> "date",
 		default_value		=> undef,
@@ -60,7 +65,8 @@ __PACKAGE__->add_columns(
 	},
 );
 __PACKAGE__->set_primary_key("id");
-__PACKAGE__->add_unique_constraint(['day']);
+__PACKAGE__->add_unique_constraint(['athlete', 'day']);
+__PACKAGE__->belongs_to( 'athlete' => 'WkDB::Schema::Athlete' );
 
 sub sqlt_deploy_hook {
 	my( $self, $sqlt ) = @_;

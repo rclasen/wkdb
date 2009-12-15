@@ -4,6 +4,10 @@ use warnings;
 use base 'WkDB::Validate';
 
 our %profile = (
+	athlete => [
+		\&MyValidate::NON_BLANK,
+		\&WkDB::Validate::ATHLETE,
+	],
 	date	=> [
 		\&MyValidate::NON_BLANK,
 	],

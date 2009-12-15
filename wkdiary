@@ -15,10 +15,13 @@ use Jaufs::Diary;
 
 my $skip;
 
+my $athlete;
+
 my $wanthelp;
 my $needhelp;
 
 GetOptions(
+	'athlete=s'	=> \$athlete,
 	'help!'		=> \$wanthelp,
 	'skip!'		=> \$skip,
 ) or ++$needhelp;
@@ -78,10 +81,16 @@ if( $needhelp ){
 my $wk = WkDB->new;
 my $db = $wk->db;
 
+$athlete ||= $wk->config( 'athlete' );
+if( ! $db->resultset('Athlete')->find( $athlete ) ){
+	print STDERR "no such athlete: $athlete\n";
+	exit 1;
+}
+
 $ENV{EDITOR}||='vi';
 
 # write textfile
-print "preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
+print $athlete, ": preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
 
 my $list = &build_list( $from, $to );
 
@@ -98,7 +107,7 @@ while(1){
 	my $oldmtime = (stat $tfname)[9];
 
 	# invoke editor
-	system( $ENV{EDITOR}, '+2', $tfname ) == 0
+	system( $ENV{EDITOR}, '+3', $tfname ) == 0
 		or die "editor died: $!";
 
 	if( $oldmtime >= (stat $tfname)[9] ){
@@ -156,10 +165,11 @@ sub build_list {
 
 	for( my $date = $from->clone; $date <= $to; $date->add( days => 1 ) ){
 		if( my $row = $db->resultset('Diary')->search({
+			athlete => $athlete,
 			day	=> $date->ymd,
 		})->first ){
 			push @list, {
-				action		=> $skip ? 'skip' : 'save',
+				athlete		=> $athlete,
 				date		=> $date->clone,
 				sleep		=> $row->sleep,
 				hr		=> $row->hr,
@@ -167,11 +177,13 @@ sub build_list {
 				weight		=> $row->weight,
 				bodyfat		=> $row->bodyfat,
 				notes		=> $row->notes,
+				action		=> $skip ? 'skip' : 'save',
 			};
 
 		} else {
 			push @list, {
-				date	=> $date->clone,
+				athlete		=> $athlete,
+				date		=> $date->clone,
 				action		=> 'save',
 			};
 		}
@@ -189,11 +201,13 @@ sub process_list {
 		next if $ent->{action} eq 'skip';
 
 		my $row = $db->resultset('Diary')->search({
+			athlete => $ent->{athlete},
 			day     => $ent->{date}->ymd,
 		})->first;
 
 		if( $ent->{action} eq 'save' ){
 			$row ||= $db->resultset('Diary')->new({
+				athlete => $ent->{athlete},
 				day	=> $ent->{date},
 			});
 			print "saving ", $ent->{date}->ymd,"...\n";
