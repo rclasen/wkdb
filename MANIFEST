@@ -7,20 +7,26 @@ debian/control
 debian/copyright
 debian/rules
 genddl
+dbschema/WkDB-Schema-0.1-0.2-SQLite.sql
 dbschema/WkDB-Schema-0.1-SQLite.sql
+dbschema/WkDB-Schema-0.2-SQLite.sql
 lib/Jaufs.pm
+lib/Jaufs/Diary.pm
 lib/MyValidate.pm
 lib/WkDB.pm
 lib/WkDB/Base.pm
 lib/WkDB/ResultSet/File.pm
 lib/WkDB/Schema.pm
+lib/WkDB/Schema/Diary.pm
 lib/WkDB/Schema/File.pm
 lib/WkDB/Schema/Pool.pm
 lib/WkDB/Validate.pm
+lib/WkDB/Validate/Diary.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
 README
 todo.txt
+wkdiary
 wkfile
 wkfind

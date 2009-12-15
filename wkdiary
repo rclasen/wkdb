@@ -1,0 +1,247 @@
+#!/usr/bin/perl
+
+# edit diary entries
+
+use warnings;
+use strict;
+use Getopt::Long;
+use File::Temp qw/tempfile/;
+use DateTime;
+use WkDB;
+use Jaufs::Diary;
+
+# TODO: POD
+# TODO: add option to use existing file
+
+my $skip;
+
+my $wanthelp;
+my $needhelp;
+
+GetOptions(
+	'help!'		=> \$wanthelp,
+	'skip!'		=> \$skip,
+) or ++$needhelp;
+
+if( $wanthelp ){
+	print <<EOF;
+usage: $0 [<datespec>]
+edit wkdb diary entries.
+
+Options:
+--skip		prepare existing entries for skip
+
+--help          this message
+
+datespecs:
+ today          default
+ yesterday
+ -x             today - x days
+ yyyy-mm-dd     specified date
+ [from]:[to]    range of datespecs
+EOF
+	exit 0;
+}
+
+my( $from, $to );
+my $spec = shift;
+
+if( $spec && $spec =~ /:/ ){
+	my @spec = split(/:/,$spec);
+	$from = &parse_datespec( shift @spec );
+	$to = &parse_datespec( shift @spec );
+
+} else {
+	$from = $to = &parse_datespec( $spec );
+}
+
+if( ! $from ){
+	print STDERR "missing/invalid 'from' datespec\n";
+	++$needhelp;
+}
+
+if( ! $to ){
+	print STDERR "missing/invalid 'to' datespec\n";
+	++$needhelp;
+}
+
+if( $from && $to && $from > $to ){
+	print STDERR "invalid datespec range\n";
+	++$needhelp;
+}
+
+if( $needhelp ){
+	print STDERR "use --help for usage info\n";
+	exit 1;
+}
+
+my $wk = WkDB->new;
+my $db = $wk->db;
+
+$ENV{EDITOR}||='vi';
+
+# write textfile
+print "preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
+
+my $list = &build_list( $from, $to );
+
+my $jaufs = Jaufs::Diary->new;
+
+my $tfname = (tempfile)[1]
+	or die "tempfile: $!";
+
+$jaufs->write( $tfname, $list );
+
+while(1){
+	my $oldmtime = (stat $tfname)[9];
+
+	# invoke editor
+	system( $ENV{EDITOR}, '+2', $tfname ) == 0
+		or die "editor died: $!";
+
+	if( $oldmtime >= (stat $tfname)[9] ){
+		print "no changes\n";
+		last;
+	}
+
+	# read + update:
+
+	my $fail;
+	my $modified = $jaufs->read( $tfname );
+
+	if( ! $modified ){
+		print "ERROR: failed to read data\n";
+		$fail++;
+
+	} elsif( ! &process_list( $modified ) ){
+		print "ERROR: failed to update DB\n";
+		$fail++;
+
+	} else { # no problems processing list
+		last;
+	}
+
+	if( $fail ){
+		my $reply;
+		do {
+			print "what shall I do?\n",
+				"r - regenerate file\n",
+				"e - edit file\n",
+				"x - exit\n";
+
+			$reply = <STDIN>;
+			chomp $reply;
+
+		} while( $reply !~ /^[rex]$/ );
+
+		if( $reply eq 'r' ){
+			$jaufs->write( $tfname, $list );
+
+		} elsif( $reply eq 'e' ){
+			# nothing to do
+
+		} elsif( $reply eq 'x' ){
+			last;
+
+		}
+	}
+}
+
+sub build_list {
+	my( $from, $to ) = @_;
+
+	my @list;
+
+	for( my $date = $from->clone; $date <= $to; $date->add( days => 1 ) ){
+		if( my $row = $db->resultset('Diary')->search({
+			day	=> $date->ymd,
+		})->first ){
+			push @list, {
+				action		=> $skip ? 'skip' : 'save',
+				date		=> $date->clone,
+				sleep		=> $row->sleep,
+				hr		=> $row->hr,
+				temperature	=> $row->temperature,
+				weight		=> $row->weight,
+				bodyfat		=> $row->bodyfat,
+				notes		=> $row->notes,
+			};
+
+		} else {
+			push @list, {
+				date	=> $date->clone,
+				action		=> 'save',
+			};
+		}
+	}
+
+	\@list;
+}
+
+
+sub process_list {
+	my( $list ) = @_;
+
+	foreach my $ent ( @$list ){
+		next unless $ent->{action};
+		next if $ent->{action} eq 'skip';
+
+		my $row = $db->resultset('Diary')->search({
+			day     => $ent->{date}->ymd,
+		})->first;
+
+		if( $ent->{action} eq 'save' ){
+			$row ||= $db->resultset('Diary')->new({
+				day	=> $ent->{date},
+			});
+			print "saving ", $ent->{date}->ymd,"...\n";
+
+			$row->sleep( $ent->{sleep} )
+				if exists $ent->{sleep};
+			$row->hr( $ent->{hr} )
+				if exists $ent->{hr};
+			$row->temperature( $ent->{temperature} )
+				if exists $ent->{temperature};
+			$row->weight( $ent->{weight} )
+				if exists $ent->{weight};
+			$row->bodyfat( $ent->{bodyfat} )
+				if exists $ent->{bodyfat};
+			$row->notes( $ent->{notes} )
+				if exists $ent->{notes};
+
+			$row->update_or_insert or return;
+
+		} elsif( $ent->{action} eq 'delete' && $row ){
+			print "deleting ", $ent->{date}->ymd,"...\n";
+			$row->delete or return;
+
+		}
+	}
+
+	1;
+}
+
+
+sub parse_datespec {
+	my $spec = shift;
+
+	if( ! defined $spec || $spec =~ /^\s*(|today)\s*$/i ){
+		return DateTime->today;
+
+	} elsif( $spec =~ /^\s*yesterday\s*$/i ){
+		return DateTime->today->add( days => -1 );
+
+	} elsif( $spec =~ /^\s*(-\d+)\s*$/i ){
+		return DateTime->today->add( days => $1 );
+
+	} elsif( $spec =~ /^\s*(\d+)-(\d+)-(\d+)\s*$/i ){
+		return DateTime->new(
+			year	=> $1,
+			month	=> $2,
+			day	=> $3,
+			time_zone	=> 'local',
+		);
+	}
+
+	return;
+}
