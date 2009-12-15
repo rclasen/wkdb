@@ -2,6 +2,19 @@ package WkDB::Validate;
 use warnings;
 use strict;
 use base 'MyValidate';
+use Carp;
+
+sub new {
+	my( $proto, $a ) = @_;
+
+	my $self = $proto->SUPER::new($a)
+		or return;
+
+	$self->{wk}->isa('WkDB')  or croak "missing WkDB handle";
+	$self;
+}
+
+sub wk { $_[0]->{wk} }
 
 sub HEARTRATE {
 	return unless defined $_[1];

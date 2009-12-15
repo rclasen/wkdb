@@ -30,7 +30,9 @@ validata $data hash against $profile
 
 check Multiple data sets:
 
- my $validator = MyValidate->new( $profile );
+ my $validator = MyValidate->new({
+ 	profile => $profile,
+ });
  my $result1 = $validator->check( $data1 );
  my $result2 = $validator->check( $data2 );
 
@@ -39,18 +41,20 @@ tries to be compatible with FormValidator::Simple::Result
 =cut
 
 sub new {
-	my( $proto, $profile ) = @_;
+	my( $proto, $a ) = @_;
 	my $self = bless {
-		profile	=> $profile,
+		profile	=> {},
+		ref $proto ? %$proto : (), # allow cloning
+		$a ? %$a : (),
 		errors	=> {},
 	}, ref $proto || $proto;
 }
 
 sub check {
-	my( $proto, $data, $profile ) = @_;
+	my( $proto, $data, $a ) = @_;
 
-	$profile = $proto->{profile} if ref $proto;
-	my $self = $proto->new( $profile );
+	my $self = $proto->new( $a );
+	my $profile = $self->{profile};
 
 	foreach my $f ( keys %$profile ){
 		next if $f eq '';

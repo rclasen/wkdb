@@ -85,7 +85,9 @@ print "preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
 
 my $list = &build_list( $from, $to );
 
-my $jaufs = Jaufs::Diary->new;
+my $jaufs = Jaufs::Diary->new({
+	wk	=> $wk,
+});
 
 my $tfname = (tempfile)[1]
 	or die "tempfile: $!";

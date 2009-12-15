@@ -50,17 +50,23 @@ our @order = qw(
 our $width = 13;
 
 sub new {
-	my( $class ) = @_;
+	my( $class, $a ) = @_;
 
-	$class->SUPER::new({
-		order	=> \@order,
-		fields	=> \%fields,
-		width	=> $width,
-		validator	=> WkDB::Validate::Diary->new( {
+	my $valid = WkDB::Validate::Diary->new({
+		wk => $a->{wk},
+		profile => {
 			action	=> [
 				\&MyValidate::NON_BLANK,
 			],
-		}),
+		},
+	});
+
+	$class->SUPER::new({
+		$a ? %$a : (),
+		order	=> \@order,
+		fields	=> \%fields,
+		width	=> $width,
+		validator	=> $valid,
 	});
 }
 

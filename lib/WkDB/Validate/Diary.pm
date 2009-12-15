@@ -22,11 +22,14 @@ our %profile = (
 );
 
 sub new {
-	my( $proto, $xtra ) = @_;
+	my( $proto, $a ) = @_;
 
-	$proto->SUPER::new( {
-		%profile,
-		$xtra ? %$xtra : (),
+	$proto->SUPER::new({
+		$a ? %$a : (),
+		profile => {
+			%profile,
+			$a->{profile} ? %{$a->{profile}} : (),
+		},
 	});
 }
 
