@@ -7,6 +7,7 @@ debian/control
 debian/copyright
 debian/rules
 genddl
+dbschema/WkDB-Schema-0.1-SQLite.sql
 lib/WkDB.pm
 lib/WkDB/Base.pm
 lib/WkDB/ResultSet/File.pm
