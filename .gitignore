@@ -1,6 +1,10 @@
-blib
-Makefile
-pm_to_blib
 *-stamp
+*.old
+*.bak
 *.tar.gz
+*.swp
+*~
 META.yml
+Makefile
+blib
+pm_to_blib
