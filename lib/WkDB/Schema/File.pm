@@ -56,7 +56,7 @@ __PACKAGE__->add_columns(
 	},
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint(['path']);
+__PACKAGE__->add_unique_constraint(['pool', 'path']);
 __PACKAGE__->belongs_to( 'pool' => 'WkDB::Schema::Pool' );
 __PACKAGE__->has_many( 'exercise_files' => 'WkDB::Schema::File', {
 	'foreign.exercise' => 'self.exercise',
