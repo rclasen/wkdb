@@ -1,0 +1,176 @@
+#!/usr/bin/perl
+
+# edit diary entries
+
+use warnings;
+use strict;
+use Getopt::Long;
+use WkDB;
+
+# TODO: pod
+
+my $wanthelp;
+my $needhelp;
+
+my $run;
+
+my $resource = lc shift;
+
+if( ! $resource ){
+	print STDERR "missing resource\n";
+	++$needhelp;
+
+} elsif( $resource eq 'help' ){
+	++$wanthelp;
+
+} elsif( $resource eq 'athlete' ){
+	my $cmd = lc shift;
+
+	if( ! $cmd ){
+		print STDERR "missing command\n";
+		++$needhelp;
+
+	} elsif( $cmd eq 'list' ){
+		$run = \&athlete_list;
+
+	} elsif( $cmd eq 'add' ){
+		$run = \&athlete_add;
+		if( @ARGV != 1 ){
+			++$needhelp;
+		}
+
+	} elsif( $cmd eq 'name' ){
+		$run = \&athlete_name;
+		if( @ARGV != 2 ){
+			++$needhelp;
+
+		} elsif( $ARGV[0] !~ /^\d+$/ ){
+			print STDERR "invalid athlete ID\n";
+			++$needhelp;
+		}
+
+	} elsif( $cmd eq 'delete' ){
+		$run = \&athlete_delete;
+		if( @ARGV != 1 ){
+			++$needhelp;
+
+		} elsif( $ARGV[0] !~ /^\d+$/ ){
+			print STDERR "invalid athlete ID\n";
+			++$needhelp;
+		}
+
+	} else {
+		print STDERR "unknown command: $cmd\n";
+		++$needhelp;
+	}
+
+} else {
+	print STDERR "unknown resource: $resource\n";
+	++$needhelp;
+}
+
+if( $wanthelp ){
+	print <<EOF;
+usage: $0 <resource> <cmd> [<options>...]
+access the workout database wkdb
+
+resources:	commands:
+ athlete
+		add <name>
+		list
+		name <id> <name>
+		delete <id>
+EOF
+	exit 0;
+}
+
+if( $needhelp ){
+	print STDERR "use --help for usage info\n";
+	exit 1;
+}
+
+
+my $wk = WkDB->new;
+my $db = $wk->db;
+
+&$run( @ARGV )
+	or exit 1;
+exit 0;
+
+sub confirm {
+	my( $msg ) = @_;
+
+	my $reply;
+	do {
+		{ local $|; print $msg,"? [yN]: "; }
+
+		$reply = <STDIN>;
+
+	} while( ! $reply || $reply != /^[yn]/i );
+
+	return 1 if $reply =~ /^y/i;
+	return;
+}
+
+sub athlete_add {
+	my( $name ) = @_;
+	$db->resultset('Athlete')->create({
+		name	=> $name,
+	});
+}
+
+sub athlete_list {
+	my $rs = $db->resultset('Athlete')->search({
+	}, {
+		order_by	=> 'name',
+	});
+
+	printf "%-5s %s\n", qw/ id name /;
+	foreach my $row ( $rs->all ){
+		printf "%5d %s\n",
+			$row->id, $row->name;
+	}
+
+	1;
+}
+
+sub athlete_name {
+	my( $id, $name ) = @_;
+
+	my $row = $db->resultset('Athlete')->search({
+		id	=> $id,
+	})->first;
+
+	if( ! $row ){
+		print STDERR "no such athlete\n";
+		return;
+
+	}
+
+	$row->name( $name );
+	$row->update or return;
+
+	1;
+}
+
+sub athlete_delete {
+	my( $id ) = @_;
+
+	my $row = $db->resultset('Athlete')->search({
+		id	=> $id,
+	})->first;
+
+	if( ! $row ){
+		print STDERR "no such athlete\n";
+		return;
+
+	}
+
+	if( confirm("Delete Athlete $id") ){
+		$row->delete or return;
+
+	}
+
+	1;
+}
+
