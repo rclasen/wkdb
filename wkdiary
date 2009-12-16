@@ -8,7 +8,7 @@ use Getopt::Long;
 use File::Temp qw/tempfile/;
 use DateTime;
 use WkDB;
-use Jaufs::Diary;
+use WkDB::Jaufs::Diary;
 
 # TODO: POD
 # TODO: add option to use existing file
@@ -94,7 +94,7 @@ print $athlete, ": preparing entries from ", $from->ymd ," to ", $to->ymd, "...\
 
 my $list = &build_list( $from, $to );
 
-my $jaufs = Jaufs::Diary->new({
+my $jaufs = WkDB::Jaufs::Diary->new({
 	wk	=> $wk,
 });
 

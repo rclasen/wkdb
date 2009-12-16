@@ -1,8 +1,8 @@
-package Jaufs::Diary;
+package WkDB::Jaufs::Diary;
 use strict;
 use warnings;
 use DateTime;
-use base 'Jaufs';
+use base 'WkDB::Jaufs';
 use WkDB::Validate::Diary;
 
 our %fields = (
