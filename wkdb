@@ -37,6 +37,9 @@ if( ! $resource ){
 		$run = \&athlete_add;
 		if( @ARGV != 1 ){
 			++$needhelp;
+		} elsif( $ARGV[0] !~ /^\w+$/ ){
+			print STDERR "invalid name\n";
+			++$needhelp;
 		}
 
 	} elsif( $cmd eq 'name' ){
@@ -46,6 +49,10 @@ if( ! $resource ){
 
 		} elsif( $ARGV[0] !~ /^\d+$/ ){
 			print STDERR "invalid athlete ID\n";
+			++$needhelp;
+
+		} elsif( $ARGV[1] !~ /^\w+$/ ){
+			print STDERR "invalid name\n";
 			++$needhelp;
 		}
 
