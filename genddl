@@ -13,4 +13,5 @@ mkdir('dbschema');
 #print $db->storage->deployment_statements($db); exit;
 #$db->create_ddl_dir(['SQLite'], '0.1', 'dbschema');
 #$db->create_ddl_dir(['SQLite'], '0.2', 'dbschema', '0.1');
-$db->create_ddl_dir(['SQLite'], '0.3', 'dbschema', '0.2');
+#$db->create_ddl_dir(['SQLite'], '0.3', 'dbschema', '0.2');
+$db->create_ddl_dir(['SQLite'], '0.4', 'dbschema', '0.3');
