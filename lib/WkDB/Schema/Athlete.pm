@@ -31,7 +31,7 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['name']);
-__PACKAGE__->has_many( 'diaries' => 'WkDB::Schema::Diary' );
+__PACKAGE__->has_many( 'diary' => 'WkDB::Schema::Diary' );
 
 sub get_timestamp {
 	scalar time;
