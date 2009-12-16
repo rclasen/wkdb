@@ -51,7 +51,7 @@ sub write {
 				$val = '';
 
 			} elsif( $param->{encode} ){
-				$val = $param->{encode}( $ent->{$field} )
+				$val = $param->{encode}( $self, $ent->{$field} )
 
 			} else {
 				$val = $ent->{$field};
@@ -100,11 +100,16 @@ sub setfield {
 		$ent->{$field} = undef;
 
 	} elsif( $param->{decode} ){
-		$ent->{$field} = $param->{decode}( $val );
-		if( ! defined $ent->{$field} ){
+		my( $r, @err ) = $param->{decode}( $self, $val );
+		if( @err ){
+			print STDERR "line $.: failed to decode $field: @err\n";
+			return;
+
+		} elsif( ! defined $r ){
 			print STDERR "line $.: failed to decode $field\n";
 			return;
 		}
+		$ent->{$field} = $r;
 		#print $field, " decoded as ", $ent->{$field},"\n";
 
 	} else {
@@ -286,15 +291,15 @@ sub edit {
 
 
 sub decode_action {
-	$_[0] =~ /^\s*(skip|delete|save)\s*$/i
+	$_[1] =~ /^\s*(skip|delete|save)\s*$/i
 		or return;
 
 	return lc $1;
 }
 
-sub encode_date { $_[0]->ymd };
+sub encode_date { $_[1]->ymd };
 sub decode_date {
-	$_[0] =~ /^\s*(\d+)-(\d+)-(\d+)\s*$/
+	$_[1] =~ /^\s*(\d+)-(\d+)-(\d+)\s*$/
 		or return;
 
 	DateTime->new(
@@ -306,32 +311,32 @@ sub decode_date {
 }
 
 sub encode_hours {
-	my $m = int($_[0] / 60);
+	my $m = int($_[1] / 60);
 	my $h = int($m / 60); $m %= 60;
 	sprintf('%d:%02d', $h, $m );
 }
 
 sub decode_hours {
-	$_[0] =~ /^(\d+)(?::(\d\d))?$/
+	$_[1] =~ /^(\d+)(?::(\d\d))?$/
 		or return;
 
 	$1 * 3600 + ($2 || 0) * 60;
 }
 
 sub decode_int {
-	$_[0] =~ /^([+-]?\d+)$/
+	$_[1] =~ /^([+-]?\d+)$/
 		or return;
 	$1;
 }
 
 sub decode_uint {
-	$_[0] =~ /^(\d+)$/
+	$_[1] =~ /^(\d+)$/
 		or return;
 	$1;
 }
 
 sub decode_float {
-	$_[0] =~ /^([+-]?\d+(?:\.\d+)?)$/
+	$_[1] =~ /^([+-]?\d+(?:\.\d+)?)$/
 		or return;
 	$1;
 }

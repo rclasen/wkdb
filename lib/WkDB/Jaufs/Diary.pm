@@ -21,11 +21,11 @@ our %fields = (
 		decode	=> \&Jaufs::decode_uint,
 	},
 	temperature => {
-		encode	=> sub { sprintf('%.1f',$_[0]) },
+		encode	=> sub { sprintf('%.1f',$_[1]) },
 		decode	=> \&Jaufs::decode_float,
 	},
 	weight => {
-		encode	=> sub { sprintf('%.1f',$_[0]) },
+		encode	=> sub { sprintf('%.1f',$_[1]) },
 		decode	=> \&Jaufs::decode_float,
 	},
 	bodyfat => {
