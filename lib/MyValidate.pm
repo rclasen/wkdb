@@ -75,8 +75,8 @@ sub _check_field {
 	my( $self, $profile, $field, $data ) = @_;
 
 	foreach my $check ( @{$profile->{$field}} ){
-		my $err = &$check( $self, $data );
-		push @{$self->{errors}{$field}}, $err if $err;
+		my @err = &$check( $self, $data );
+		push @{$self->{errors}{$field}}, @err if @err;
 	}
 }
 
