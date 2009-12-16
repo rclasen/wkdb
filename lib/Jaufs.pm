@@ -12,7 +12,8 @@ read list of hashes from textfile.
 use strict;
 use warnings;
 use DateTime;
-use MyValidate;
+use Carp;
+use File::Temp qw/tempfile/;
 
 sub new {
 	my( $proto, $a ) = @_;
@@ -212,6 +213,77 @@ sub read {
 	close( $fh ) if $close;
 	return \@list;
 }
+
+sub edit {
+	my( $self, $list, $process ) = splice(@_,0,3);
+
+	my $tfname = (tempfile)[1]
+		or croak "tempfile: $!";
+
+	$self->write( $tfname, $list )
+		or return;
+
+	while(1){
+		my $oldmtime = (stat $tfname)[9];
+
+		# invoke editor
+		# TODO: don't hardcode start-line
+		system( $ENV{EDITOR} ||'vi', '+3', $tfname ) == 0
+			or croak "editor died: $!";
+
+		if( $oldmtime >= (stat $tfname)[9] ){
+			print "no changes\n";
+			return 1;
+		}
+
+		# read + update:
+
+		my $fail;
+		my $modified = $self->read( $tfname );
+
+		if( ! $modified ){
+			print "ERROR: failed to read data\n";
+			$fail++;
+
+		} elsif( ! &$process( $modified, @_ ) ){
+			print "ERROR: failed to process data\n";
+			$fail++;
+
+		} else { # no problems processing list
+			return 1;
+		}
+
+		if( $fail ){
+			my $reply;
+			do {
+				print "what shall I do?\n",
+					"r - regenerate file\n",
+					"e - edit file\n",
+					"x - exit\n";
+
+				$reply = <STDIN>;
+				chomp $reply;
+
+			} while( $reply !~ /^[rex]$/ );
+
+			if( $reply eq 'r' ){
+				$self->write( $tfname, $list )
+					or return;
+
+			} elsif( $reply eq 'e' ){
+				# nothing to do
+
+			} elsif( $reply eq 'x' ){
+				return 1;
+
+			}
+		}
+	}
+
+	# shouldn't get here
+	return;
+}
+
 
 sub decode_action {
 	$_[0] =~ /^\s*(skip|delete|save)\s*$/i

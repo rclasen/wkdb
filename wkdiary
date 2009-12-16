@@ -5,7 +5,6 @@
 use warnings;
 use strict;
 use Getopt::Long;
-use File::Temp qw/tempfile/;
 use DateTime;
 use WkDB;
 use WkDB::Jaufs::Diary;
@@ -87,7 +86,6 @@ if( ! $db->resultset('Athlete')->find( $athlete ) ){
 	exit 1;
 }
 
-$ENV{EDITOR}||='vi';
 
 # write textfile
 print $athlete, ": preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
@@ -98,65 +96,7 @@ my $jaufs = WkDB::Jaufs::Diary->new({
 	wk	=> $wk,
 });
 
-my $tfname = (tempfile)[1]
-	or die "tempfile: $!";
-
-$jaufs->write( $tfname, $list );
-
-while(1){
-	my $oldmtime = (stat $tfname)[9];
-
-	# invoke editor
-	system( $ENV{EDITOR}, '+3', $tfname ) == 0
-		or die "editor died: $!";
-
-	if( $oldmtime >= (stat $tfname)[9] ){
-		print "no changes\n";
-		last;
-	}
-
-	# read + update:
-
-	my $fail;
-	my $modified = $jaufs->read( $tfname );
-
-	if( ! $modified ){
-		print "ERROR: failed to read data\n";
-		$fail++;
-
-	} elsif( ! &process_list( $modified ) ){
-		print "ERROR: failed to update DB\n";
-		$fail++;
-
-	} else { # no problems processing list
-		last;
-	}
-
-	if( $fail ){
-		my $reply;
-		do {
-			print "what shall I do?\n",
-				"r - regenerate file\n",
-				"e - edit file\n",
-				"x - exit\n";
-
-			$reply = <STDIN>;
-			chomp $reply;
-
-		} while( $reply !~ /^[rex]$/ );
-
-		if( $reply eq 'r' ){
-			$jaufs->write( $tfname, $list );
-
-		} elsif( $reply eq 'e' ){
-			# nothing to do
-
-		} elsif( $reply eq 'x' ){
-			last;
-
-		}
-	}
-}
+$jaufs->edit( $list, \&process_list );
 
 sub build_list {
 	my( $from, $to ) = @_;
