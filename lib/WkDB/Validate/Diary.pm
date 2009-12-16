@@ -6,7 +6,6 @@ use base 'WkDB::Validate';
 our %profile = (
 	athlete => [
 		\&MyValidate::NON_BLANK,
-		\&WkDB::Validate::ATHLETE,
 	],
 	day	=> [
 		\&MyValidate::NON_BLANK,

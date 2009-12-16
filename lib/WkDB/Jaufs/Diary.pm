@@ -6,8 +6,9 @@ use base 'WkDB::Jaufs';
 use WkDB::Validate::Diary;
 
 our %fields = (
-	athlete => { # TODO: decode_dbic?
-		decode	=> \&Jaufs::decode_uint,
+	athlete => {
+		encode	=> \&WkDB::Jaufs::encode_athlete,
+		decode	=> \&WkDB::Jaufs::decode_athlete,
 	},
 	day => {
 		encode	=> \&Jaufs::encode_date,

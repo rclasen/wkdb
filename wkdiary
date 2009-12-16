@@ -14,13 +14,13 @@ use WkDB::Jaufs::Diary;
 
 my $skip;
 
-my $athlete;
+my $opt_athlete;
 
 my $wanthelp;
 my $needhelp;
 
 GetOptions(
-	'athlete=s'	=> \$athlete,
+	'athlete=s'	=> \$opt_athlete,
 	'help!'		=> \$wanthelp,
 	'skip!'		=> \$skip,
 ) or ++$needhelp;
@@ -80,15 +80,16 @@ if( $needhelp ){
 my $wk = WkDB->new;
 my $db = $wk->db;
 
-$athlete ||= $wk->config( 'athlete' );
-if( ! $db->resultset('Athlete')->find( $athlete ) ){
-	print STDERR "no such athlete: $athlete\n";
+$opt_athlete ||= $wk->config( 'athlete' );
+my $athlete = $db->resultset('Athlete')->find( $opt_athlete );
+if( ! $athlete ){
+	print STDERR "no such athlete: $opt_athlete\n";
 	exit 1;
 }
 
 
 # write textfile
-print $athlete, ": preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
+print $athlete->name, ": preparing entries from ", $from->ymd ," to ", $to->ymd, "...\n";
 
 my $list = &build_list( $from, $to );
 
@@ -104,19 +105,11 @@ sub build_list {
 	my @list;
 
 	for( my $date = $from->clone; $date <= $to; $date->add( days => 1 ) ){
-		if( my $row = $db->resultset('Diary')->search({
-			athlete => $athlete,
+		if( my $row = $athlete->search_related( 'diary', {
 			day	=> $date->ymd,
 		})->first ){
 			push @list, {
-				athlete		=> $athlete,
-				day		=> $date->clone,
-				sleep		=> $row->sleep,
-				hr		=> $row->hr,
-				temperature	=> $row->temperature,
-				weight		=> $row->weight,
-				bodyfat		=> $row->bodyfat,
-				notes		=> $row->notes,
+				$row->get_inflated_columns,
 				action		=> $skip ? 'skip' : 'save',
 			};
 
@@ -137,40 +130,33 @@ sub process_list {
 	my( $list ) = @_;
 
 	foreach my $ent ( @$list ){
-		next unless $ent->{action};
-		next if $ent->{action} eq 'skip';
+		if( ! $ent->{action} || $ent->{action} eq 'skip' ){
+			print "skipping ", $ent->{day}->ymd,"...\n";
+			# do nothing
 
-		my $row = $db->resultset('Diary')->search({
-			athlete => $ent->{athlete},
-			day     => $ent->{day}->ymd,
-		})->first;
-
-		if( $ent->{action} eq 'save' ){
-			$row ||= $db->resultset('Diary')->new({
-				athlete => $ent->{athlete},
-				day	=> $ent->{day},
-			});
-			print "saving ", $ent->{day}->ymd,"...\n";
-
-			$row->sleep( $ent->{sleep} )
-				if exists $ent->{sleep};
-			$row->hr( $ent->{hr} )
-				if exists $ent->{hr};
-			$row->temperature( $ent->{temperature} )
-				if exists $ent->{temperature};
-			$row->weight( $ent->{weight} )
-				if exists $ent->{weight};
-			$row->bodyfat( $ent->{bodyfat} )
-				if exists $ent->{bodyfat};
-			$row->notes( $ent->{notes} )
-				if exists $ent->{notes};
-
-			$row->update_or_insert or return;
-
-		} elsif( $ent->{action} eq 'delete' && $row ){
+		} elsif( $ent->{action} eq 'delete' ){
 			print "deleting ", $ent->{day}->ymd,"...\n";
-			$row->delete or return;
 
+			$athlete->search_related( 'diary', {
+				day     => $ent->{day}->ymd,
+			})->delete;
+
+		} elsif( $ent->{action} eq 'save' ){
+			my %dat = %$ent;
+			delete $dat{action};
+
+			if( my $row = $ent->{athlete}->search_related( 'diary', {
+				day     => $ent->{day}->ymd,
+			})->first ){
+				print "updating ", $ent->{day}->ymd,"...\n";
+
+				$row->update(\%dat);
+
+			} else {
+				print "adding ", $ent->{day}->ymd,"...\n";
+				$ent->{athlete}->add_to_diary(\%dat);
+
+			}
 		}
 	}
 
