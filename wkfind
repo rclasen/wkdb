@@ -9,6 +9,7 @@ use Getopt::Long;
 use WkDB;
 
 # TODO: POD
+# TODO: merge with wkdb
 
 my $opt_all = 0;
 my $opt_after = '2008-01-01';
@@ -35,6 +36,24 @@ EOF
 	exit 0;
 }
 
+my $after_date;
+if( ! defined $opt_after ){
+	# do nothing;
+
+} elsif( $opt_after =~ /^(\d+)-(\d+)-(\d+)$/
+	$after_date = DateTime->new(
+		year	=> $1,
+		month	=> $2,
+		day	=> $3,
+		time_zone => 'local',
+	);
+
+} else {
+	print STDERR "invalid argument to date option\n";
+	++$needhelp;
+}
+
+
 if( $needhelp ){
 	print STDERR "use --help for usage info\n";
 	exit 1;
@@ -52,8 +71,8 @@ my $overlaps = $db->resultset('File')->search_overlapping_files({
 			exercise	=> undef,
 		)
 	),
-	( $opt_after
-		? ( start	=> { '>=' => $opt_after } )
+	( $after_date
+		? ( start	=> { '>=' => $after_date->ymd } )
 		: ()
 	),
 });
@@ -62,9 +81,17 @@ foreach my $row ( @$overlaps ){
 	next unless @$row;
 
 	my $first = $row->[0];
+	my $start = DateTime->from_epoch(
+		epoch => $first->start,
+		time_zone => 'local',
+	);
+	my $end = DateTime->from_epoch(
+		epoch => $first->end,
+		time_zone => 'local',
+	);
 
 	print '# ', join(' ',
-		$first->start->ymd, $first->start->hms,  $first->end->hms, map {
+		$start->ymd, $start->hms, $end->hms, map {
 			$_->id
 		} @$row ), "\n";
 

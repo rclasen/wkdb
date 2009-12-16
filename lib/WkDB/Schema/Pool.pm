@@ -29,11 +29,29 @@ __PACKAGE__->add_columns(
 		data_type		=> 'varchar',
 		is_nullable		=> 1,
 	},
-	# TODO: add optional file_type
+	wktype	=> { # workout file type, overrides autodection
+		data_type		=> 'varchar',
+		is_nullable		=> 1,
+	},
+	t_created => { # row creation timestamp
+		data_type		=> 'integer',
+		default_value		=> '',
+		set_on_create		=> 1,
+	},
+	t_updated => { # row update timestamp
+		data_type		=> 'integer',
+		default_value		=> '',
+		set_on_create		=> 1,
+		set_on_update		=> 1,
+	},
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint(['name']);
 __PACKAGE__->has_many( 'files' => 'WkDB::Schema::File' );
+
+sub get_timestamp {
+	scalar time;
+}
 
 sub sqlt_deploy_hook {
 	my( $self, $sqlt ) = @_;

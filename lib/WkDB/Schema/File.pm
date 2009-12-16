@@ -29,14 +29,14 @@ __PACKAGE__->add_columns(
 		default_value		=> '',
 	},
 	mtime	=> { # file modification time
-		data_type		=> 'datetime',
+		data_type		=> 'integer',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
 	# TODO: add checksum to track changes
 
-	start	=> { # start date+time
-		data_type		=> 'datetime',
+	start	=> { # start time (epoch)
+		data_type		=> 'integer',
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
@@ -54,6 +54,17 @@ __PACKAGE__->add_columns(
 		data_type		=> 'integer',
 		is_nullable		=> 1,
 	},
+	t_created => { # row creation timestamp
+		data_type		=> 'integer',
+		default_value		=> '',
+		set_on_create		=> 1,
+	},
+	t_updated => { # row update timestamp
+		data_type		=> 'integer',
+		default_value		=> '',
+		set_on_create		=> 1,
+		set_on_update		=> 1,
+	},
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint(['pool', 'path']);
@@ -64,6 +75,10 @@ __PACKAGE__->has_many( 'exercise_files' => 'WkDB::Schema::File', {
 	cascade_delete	=> 0,
 	cascade_copy	=> 0,
 });
+
+sub get_timestamp {
+	scalar time;
+}
 
 sub path_abs {
 	my $self = shift;
@@ -82,19 +97,20 @@ sub end {
 		$end < $start
 			or return;
 
-		my $dur = $end->subtract_datetime_absolute( $start )
-			or return;
-
-		$self->duration( $dur->seconds );
+		$self->duration( $end - $start );
 
 		return $end;
 	}
 
-	$start->clone->add( seconds => $self->duration );
+	$start + $self->duration;
 }
 
 sub workout {
 	my $self = shift;
+
+	if( my $ftype = $self->pool->wktype ){
+		unshift @_, ftype => $ftype;
+	}
 
 	Workout::file_read( $self->path_abs, @_ );
 }

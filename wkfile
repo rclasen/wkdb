@@ -4,6 +4,7 @@
 # TODO: POD
 
 # TODO: move to module
+# TODO: merge with wkdb
 
 use warnings;
 use strict;
@@ -78,9 +79,13 @@ if( $cmd eq 'scan' ){
 
 	print join("\t", qw/ id start duration exercise pool path /),"\n";
 	while( defined( my $p = $files->next )){
+		my $start = DateTime->from_epoch(
+			epoch => $p->start,
+			time_zone => 'local',
+		);
 		print join("\t",
 			$p->id,
-			$p->start,
+			$start->datetime,
 			$p->duration,
 			$p->exercise || '-',
 			$p->pool->name,
@@ -128,11 +133,11 @@ if( $cmd eq 'scan' ){
 		order_by => 'name'
 	});
 
-	my @fields = (qw/ id name path pattern /);
+	my @fields = (qw/ id name wktype path pattern /);
 	print join("\t", @fields ),"\n";
 	foreach my $f ( $pools->all ){
 		print join( "\t", map {
-			$f->$_;
+			$f->$_||'';
 		} @fields),"\n";
 	}
 
@@ -248,10 +253,7 @@ sub update_file {
 	local $| = 1;
 	$verbose && print 'checking ' , $pool->name, ' ', $rel, ':';
 
-	my $mdate = DateTime->from_epoch(
-		epoch		=> (stat $full)[9],
-		time_zone	=> 'local',
-	);
+	my $mtime = (stat $full)[9];
 
 	my $pfile = $pool->find_related( 'files', {
 		path	=> $rel,
@@ -262,7 +264,7 @@ sub update_file {
 
 	# name in db -> if modified: update db, update note
 	if( $pfile ){
-		if( $pfile->mtime < $mdate ){
+		if( $pfile->mtime < $mtime ){
 			$verbose && print ' modified=', $pfile->id;
 			$dbup++;
 
@@ -337,14 +339,10 @@ sub update_file {
 			push @up, "DB";
 		}
 
-		$pfile->start( DateTime->from_epoch(
-			epoch		=> $in->time_start,
-			time_zone	=> 'local',
-		));
-
+		$pfile->start( $in->time_start );
 		$pfile->path( $rel );
 		$pfile->duration( $in->dur );
-		$pfile->mtime( $mdate );
+		$pfile->mtime( $mtime );
 		$pfile->update_or_insert;
 	}
 
@@ -372,11 +370,7 @@ sub update_file {
 		unlink $full;
 		rename "$full.wkfile", $full;
 
-		$mdate = DateTime->from_epoch(
-			epoch		=> (stat($full))[9],
-			time_zone	=> 'local',
-		);
-		$pfile->mtime( $mdate );
+		$pfile->mtime( (stat($full))[9] );
 		$pfile->update;
 	}
 
