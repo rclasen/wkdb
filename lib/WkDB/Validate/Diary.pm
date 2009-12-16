@@ -8,7 +8,7 @@ our %profile = (
 		\&MyValidate::NON_BLANK,
 		\&WkDB::Validate::ATHLETE,
 	],
-	date	=> [
+	day	=> [
 		\&MyValidate::NON_BLANK,
 	],
 	hr	=> [

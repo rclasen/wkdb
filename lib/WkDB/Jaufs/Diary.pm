@@ -9,7 +9,7 @@ our %fields = (
 	athlete => { # TODO: decode_dbic?
 		decode	=> \&Jaufs::decode_uint,
 	},
-	date => {
+	day => {
 		encode	=> \&Jaufs::encode_date,
 		decode	=> \&Jaufs::decode_date,
 	},
@@ -41,7 +41,7 @@ our %fields = (
 
 our @order = qw(
 	athlete
-	date
+	day
 	sleep
 	hr
 	temperature

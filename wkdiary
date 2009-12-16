@@ -110,7 +110,7 @@ sub build_list {
 		})->first ){
 			push @list, {
 				athlete		=> $athlete,
-				date		=> $date->clone,
+				day		=> $date->clone,
 				sleep		=> $row->sleep,
 				hr		=> $row->hr,
 				temperature	=> $row->temperature,
@@ -123,7 +123,7 @@ sub build_list {
 		} else {
 			push @list, {
 				athlete		=> $athlete,
-				date		=> $date->clone,
+				day		=> $date->clone,
 				action		=> 'save',
 			};
 		}
@@ -142,15 +142,15 @@ sub process_list {
 
 		my $row = $db->resultset('Diary')->search({
 			athlete => $ent->{athlete},
-			day     => $ent->{date}->ymd,
+			day     => $ent->{day}->ymd,
 		})->first;
 
 		if( $ent->{action} eq 'save' ){
 			$row ||= $db->resultset('Diary')->new({
 				athlete => $ent->{athlete},
-				day	=> $ent->{date},
+				day	=> $ent->{day},
 			});
-			print "saving ", $ent->{date}->ymd,"...\n";
+			print "saving ", $ent->{day}->ymd,"...\n";
 
 			$row->sleep( $ent->{sleep} )
 				if exists $ent->{sleep};
@@ -168,7 +168,7 @@ sub process_list {
 			$row->update_or_insert or return;
 
 		} elsif( $ent->{action} eq 'delete' && $row ){
-			print "deleting ", $ent->{date}->ymd,"...\n";
+			print "deleting ", $ent->{day}->ymd,"...\n";
 			$row->delete or return;
 
 		}
