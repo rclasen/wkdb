@@ -40,6 +40,8 @@ tries to be compatible with FormValidator::Simple::Result
 
 =cut
 
+# TODO: split result into seperate ::Result package
+
 sub new {
 	my( $proto, $a ) = @_;
 	my $self = bless {
@@ -47,6 +49,7 @@ sub new {
 		ref $proto ? %$proto : (), # allow cloning
 		$a ? %$a : (),
 		errors	=> {},
+		data => {},
 	}, ref $proto || $proto;
 }
 
@@ -55,6 +58,7 @@ sub check {
 
 	my $self = $proto->new( $a );
 	my $profile = $self->{profile};
+	$self->{data} = $data;
 
 	foreach my $f ( keys %$profile ){
 		next if $f eq '';
@@ -94,25 +98,40 @@ sub missing {
 		return unless exists $self->{errors}{$_[1]};
 		return grep { $_ eq 'NON_BLANK' } @{ $self->{errors}{$_[1]}};
 	} else {
-		my @missing;
+		my @fields;
 		foreach my $f ( keys %{$self->{errors}} ){
 			foreach my $e ( @{ $self->{errors}{$f}} ){
 				next unless $f eq 'NON_BLANK';
-				push @missing, $f;
+				push @fields, $f;
 				last;
 			}
 		}
-		return \@missing;
+		return \@fields;
 	}
 }
 
 sub error { shift->invalid( @_ ) }
 
+sub valid {
+	my( $self, $field ) = @_;
+	if( @_ ){
+		return unless exists $self->{profile}{$field};
+		return undef unless exists $self->{data}{$field};
+		return $self->{data}{$field};
+	} else {
+		my @fields;
+		foreach my $f ( keys %{$self->{profile}} ){
+			next if $self->{errors}{$f};
+			push @fields, $f;
+		}
+		return \@fields;
+	}
+}
+
 sub has_invalid { scalar %{$_[0]->{errors}} }
 sub has_missing { scalar @{$_[0]->missing} };
 sub has_error { shift->has_invalid( @_ ) }
 sub success { ! shift->has_error( @_ ) }
-
 
 sub NON_BLANK {
 	return if $_[1];
