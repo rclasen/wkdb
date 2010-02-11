@@ -358,7 +358,7 @@ sub update_file {
 
 		if( $note ){
 			$note =~ s/\s*\bID:\d+\b\s*//;
-			$note =~ s/\s+$/ /;
+			$note =~ s/\s*$/ /;
 		} else {
 			$note = '';
 		}
