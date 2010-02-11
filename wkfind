@@ -40,7 +40,7 @@ my $after_date;
 if( ! defined $opt_after ){
 	# do nothing;
 
-} elsif( $opt_after =~ /^(\d+)-(\d+)-(\d+)$/
+} elsif( $opt_after =~ /^(\d+)-(\d+)-(\d+)$/ ){
 	$after_date = DateTime->new(
 		year	=> $1,
 		month	=> $2,
@@ -72,7 +72,7 @@ my $overlaps = $db->resultset('File')->search_overlapping_files({
 		)
 	),
 	( $after_date
-		? ( start	=> { '>=' => $after_date->ymd } )
+		? ( start	=> { '>=' => $after_date->epoch } )
 		: ()
 	),
 });
