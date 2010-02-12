@@ -28,12 +28,6 @@ __PACKAGE__->add_columns(
 		is_nullable		=> 0,
 		default_value		=> '',
 	},
-	mtime	=> { # file modification time
-		data_type		=> 'integer',
-		is_nullable		=> 0,
-		default_value		=> '',
-	},
-	# TODO: add checksum to track changes
 
 	start	=> { # start time (epoch)
 		data_type		=> 'integer',

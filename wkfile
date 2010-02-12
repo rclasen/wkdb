@@ -264,7 +264,7 @@ sub update_file {
 
 	# name in db -> if modified: update db, update note
 	if( $pfile ){
-		if( $pfile->mtime < $mtime ){
+		if( $wk->file_mtime( $pfile->id ) < $mtime ){
 			$verbose && print ' modified=', $pfile->id;
 			$dbup++;
 
@@ -342,8 +342,8 @@ sub update_file {
 		$pfile->start( $in->time_start );
 		$pfile->path( $rel );
 		$pfile->duration( $in->dur );
-		$pfile->mtime( $mtime );
 		$pfile->update_or_insert;
+		$wk->file_mtime( $pfile->id, $mtime );
 	}
 
 	if( $in && $in->cap_note && (
@@ -370,8 +370,9 @@ sub update_file {
 		unlink $full;
 		rename "$full.wkfile", $full;
 
-		$pfile->mtime( (stat($full))[9] );
 		$pfile->update;
+
+		$wk->file_mtime( $pfile->id, (stat($full))[9] );
 	}
 
 	if( $verbose ){
