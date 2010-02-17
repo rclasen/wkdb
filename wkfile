@@ -14,11 +14,13 @@ use Workout;
 use File::Find;
 use Getopt::Long;
 
+my $opt_update = 0;
 my $verbose = 0;
 my $needhelp;
 
 GetOptions(
 	'verbose!'	=> \$verbose,
+	'update!'	=> \$opt_update,
 ) or $needhelp++;
 
 if( $needhelp ){
@@ -253,25 +255,16 @@ sub update_file {
 	local $| = 1;
 	$verbose && print 'checking ' , $pool->name, ' ', $rel, ':';
 
-	my $mtime = (stat $full)[9];
-
 	my $pfile = $pool->find_related( 'files', {
 		path	=> $rel,
 	});
 
 	my $dbup;
-	#$dbup = 1; # TODO: optionally update *ALL* files' metadata
+	++$dbup if $opt_update;
 
 	# name in db -> if modified: update db, update note
 	if( $pfile ){
-		if( $wk->file_mtime( $pfile->id ) < $mtime ){
-			$verbose && print ' modified=', $pfile->id;
-			$dbup++;
-
-		} else {
-			$verbose && print ' unchanged=', $pfile->id;
-
-		}
+		$verbose && print ' known=', $pfile->id;
 	}
 
 	my $in;
@@ -343,7 +336,6 @@ sub update_file {
 		$pfile->path( $rel );
 		$pfile->duration( $in->dur );
 		$pfile->update_or_insert;
-		$wk->file_mtime( $pfile->id, $mtime );
 	}
 
 	if( $in && $in->cap_note && (
@@ -369,10 +361,6 @@ sub update_file {
 		$in->write( "$full.wkfile" );
 		unlink $full;
 		rename "$full.wkfile", $full;
-
-		$pfile->update;
-
-		$wk->file_mtime( $pfile->id, (stat($full))[9] );
 	}
 
 	if( $verbose ){

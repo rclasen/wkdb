@@ -42,19 +42,12 @@ sub new {
 		%defaults_ro,
 		( $a ? %$a : () ),
 		db	=> undef,
-		mtime	=> undef,
 	} );
 
 	-d $self->datadir || mkdir $self->datadir
 		or croak "mkdir: $!";
 
 	$self;
-}
-
-sub DESTROY {
-	my $self = shift;
-
-	$self->_mtimes_write;
 }
 
 sub cfgname {
@@ -65,11 +58,6 @@ sub cfgname {
 sub dbfname {
 	my $self = shift;
 	File::Spec->catfile($self->datadir,'data.db');
-}
-
-sub mtimesfname {
-	my $self = shift;
-	File::Spec->catfile($self->datadir,'mtimes');
 }
 
 sub schemadir {
@@ -116,33 +104,6 @@ sub config {
 	$self->{config};
 }
 
-sub _mtimes_read {
-	my $self = shift;
-
-	do $self->mtimesfname
-		or {};
-}
-
-sub _mtimes_write {
-	my $self = shift;
-
-	open( my $fh, '>', $self->mtimesfname )
-		or return;
-	print $fh Dumper( $self->{mtimes} );
-}
-
-sub file_mtime {
-	my( $self, $id, $mtime ) = @_;
-
-	my $mt = $self->{mtimes} ||= $self->_mtimes_read;
-
-	if( defined $mtime ){
-		$mt->{$id} = $mtime;
-	}
-
-	exists $mt->{$id} or return 0;
-	$mt->{$id};
-}
 
 sub _db_connect_do {
 	my( $self, $fn ) = @_;
