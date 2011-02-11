@@ -94,6 +94,9 @@ sub _cfg_read {
 	return \%cfg;
 }
 
+
+# TODO: config defaults
+
 sub config {
 	my $self = shift;
 	$self->{config} ||= $self->_cfg_read;
