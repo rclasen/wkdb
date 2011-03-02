@@ -3,6 +3,7 @@ use warnings;
 use strict;
 use base 'WkDB::Base';
 use WkDB::ResultSet::File;
+use Workout;
 
 # - Metadata cache for workout files for faster access (start, duration)
 # - keep track of files already processed as workout
