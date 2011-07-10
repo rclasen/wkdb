@@ -114,8 +114,6 @@ sub _db_connect_do {
 	WkDB::Schema->connect(
 		'dbi:SQLite:'. $fn,
 		'', '', {
-			unicode	=> 1,
-			# TODO: in recent versions 'unicode' is renamed:
 			sqlite_unicode	=> 1,
 		}
 	);
