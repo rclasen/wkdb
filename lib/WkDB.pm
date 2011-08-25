@@ -101,10 +101,14 @@ sub config {
 	my $self = shift;
 	$self->{config} ||= $self->_cfg_read;
 
-	return $self->{config}{$_[0]}
-		if @_ && exists $self->{config}{$_[0]};
+	if( ! @_ ){
+		return $self->{config};
+	}
 
-	$self->{config};
+	exists $self->{config}{$_[0]}
+		or return undef;
+
+	return $self->{config}{$_[0]}
 }
 
 
