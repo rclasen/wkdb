@@ -1,12 +1,10 @@
 package WkDB;
 use strict;
 use warnings;
-use base 'Class::Accessor::Fast';
+use base 'Workout';
 use Carp;
 use File::Spec;
-use File::HomeDir;
 use File::ShareDir;
-use Data::Dumper;
 use WkDB::Schema;
 
 our $VERSION = '0.06';
@@ -27,33 +25,14 @@ workouts.
 
 =cut
 
-# TODO: split DB into seperate files, use SQL "ATTACH" to open
-
-our %defaults_ro = (
-	datadir	=> File::Spec->catfile(
-		File::HomeDir->my_data, ".wkdb" ),
-);
-
-__PACKAGE__->mk_ro_accessors( keys %defaults_ro );
-
 sub new {
-	my( $proto, $a ) = @_;
-	my $self = $proto->SUPER::new( {
-		%defaults_ro,
-		( $a ? %$a : () ),
+	my $proto = shift;
+	$proto->SUPER::new({
 		db	=> undef,
-	} );
-
-	-d $self->datadir || mkdir $self->datadir
-		or croak "mkdir: $!";
-
-	$self;
+	});
 }
 
-sub cfgname {
-	my $self = shift;
-	File::Spec->catfile($self->datadir,'config');
-}
+# TODO: split DB into seperate files, use SQL "ATTACH" to open
 
 sub dbfname {
 	my $self = shift;
@@ -65,52 +44,6 @@ sub schemadir {
 	File::Spec->catfile( File::ShareDir->module_dir(__PACKAGE__),
 		'schema-updates' );
 }
-
-sub backupdir {
-	my $self = shift;
-	File::Spec->catfile( $self->datadir, 'backup' );
-}
-
-sub _cfg_read {
-	my $self = shift;
-
-	my $fn = $self->cfgname;
-	open( my $fh, "<", $fn )
-		or return {};
-
-	my %cfg;
-
-	while( defined( my $line = <$fh> ) ){
-		next if $line =~ /^#/;
-		next if $line =~ /^\s*$/;
-		$line =~ /^(\w+)="(.*)"\s*$/
-			or croak "config $fn, line $.: syntax error";
-
-		$cfg{$1} = $2;
-	}
-
-	close $fh;
-
-	return \%cfg;
-}
-
-
-# TODO: config defaults
-
-sub config {
-	my $self = shift;
-	$self->{config} ||= $self->_cfg_read;
-
-	if( ! @_ ){
-		return $self->{config};
-	}
-
-	exists $self->{config}{$_[0]}
-		or return undef;
-
-	return $self->{config}{$_[0]}
-}
-
 
 sub _db_connect_do {
 	my( $self, $fn ) = @_;
