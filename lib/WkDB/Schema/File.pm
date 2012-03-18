@@ -45,6 +45,11 @@ __PACKAGE__->add_columns(
 		is_nullable		=> 0,
 		default_value		=> 0,
 	},
+	converted	=> { # file is result of conversion from other format
+		data_type		=> 'boolean',
+		is_nullable		=> 0,
+		default_value		=> 0,
+	},
 	exercise => { # endure exercise.id
 		data_type		=> 'integer',
 		is_nullable		=> 1,
@@ -64,6 +69,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint(['pool', 'path']);
 __PACKAGE__->belongs_to( 'pool' => 'WkDB::Schema::Pool' );
+__PACKAGE__->belongs_to( 'exercise' => 'WkDB::Schema::Exercise' );
 __PACKAGE__->has_many( 'exercise_files' => 'WkDB::Schema::File', {
 	'foreign.exercise' => 'self.exercise',
 }, {

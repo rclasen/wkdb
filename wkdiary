@@ -12,9 +12,11 @@ use WkDB::Jaufs::Diary;
 # TODO: POD
 # TODO: add option to use existing file
 
+my $wk = WkDB->new;
+
 my $skip;
 
-my $opt_athlete;
+my $opt_athlete = $wk->config('athlete');
 
 my $wanthelp;
 my $needhelp;
@@ -77,7 +79,6 @@ if( $needhelp ){
 	exit 1;
 }
 
-my $wk = WkDB->new;
 my $db = $wk->db;
 
 $opt_athlete ||= $wk->config( 'athlete' );
