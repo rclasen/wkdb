@@ -89,7 +89,9 @@ if( $cmd eq 'scan' ){
 			$p->id,
 			$start->datetime,
 			$p->duration,
-			$p->exercise || '-',
+			$p->exercise
+				? $p->exercise->id
+				: '-',
 			$p->pool->name,
 			$p->path,
 		),"\n";
